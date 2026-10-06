@@ -3,7 +3,10 @@
   "extends": ["config:recommended"],
   "enabledManagers": ["custom.regex", "github-actions", "pre-commit"],
   "includePaths": ["upstream.json", ".pre-commit-config.yaml", ".github/workflows/**"],
-  "automerge": false,
+  "automerge": true,
+  "automergeType": "pr",
+  "platformAutomerge": true,
+  "automergeStrategy": "squash",
   "prHourlyLimit": 0,
   "prConcurrentLimit": 0,
   "customManagers": [

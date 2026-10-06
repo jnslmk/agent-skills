@@ -34,7 +34,10 @@ must be allowed to create pull requests in the repository's Actions settings.
 Renovate scans only `upstream.json`, the root pre-commit config and our workflows,
 not vendored example configs. It tracks `main` for pinned `github:` entries;
 `own:`, `anthropic:` and plugin skills remain untouched. Hook, Actions and Renovate
-version updates are also supported. **Nothing automerges.**
+version updates are also supported. Renovate enables GitHub's native auto-merge
+with squash merging: green required `Skills checks` automatically merge eligible
+PRs. Enable **Allow auto-merge** in the repository settings and require the
+`Skills checks` context on `main`; this required gate must remain enabled.
 
 Each skill has its own upstream PR so a local fork cannot block other pristine
 skills from the same repository. After Renovate proposes a SHA, its allowlisted
@@ -47,6 +50,7 @@ scripts are run. Successful PRs include skill files, `rev` and `rev_date`.
 On refusal, the skill files stay untouched, `rev`/`rev_date` remain at their old
 baseline, and `candidate_rev` records the proposed SHA for review. Renovate reports
 a post-upgrade failure; `Skills checks` also fails until the candidate is resolved.
+Red fork candidates stay blocked until manual review; never force-merge them.
 Do not merge a failed or pin-only update. The scheduled workflow explicitly
 dispatches checks on Renovate PR heads because PRs created with `GITHUB_TOKEN`
 do not trigger GitHub's normal `pull_request` event. Checks use trusted main-branch

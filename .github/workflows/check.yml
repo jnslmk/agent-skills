@@ -10,6 +10,7 @@ permissions:
 
 jobs:
   checks:
+    name: ${{ github.event_name == 'workflow_dispatch' && 'Dispatched validation' || 'Skills checks' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
