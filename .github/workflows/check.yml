@@ -1,0 +1,61 @@
+name: Skills checks
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  statuses: write
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      # Run only trusted main-branch automation; PR skill files remain inert data.
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+          path: trusted
+          persist-credentials: false
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          path: candidate
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Deterministic conservative-sync behavior
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python3 -m unittest discover -s trusted/scripts -p 'test_sync.py'
+      - name: Validate candidate pin provenance without modifying skills
+        env:
+          AGENT_SKILLS_ROOT: ${{ github.workspace }}/candidate
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python3 trusted/scripts/sync.py --check --base-ref origin/main
+      - name: Install secret scanner hook runner
+        if: always()
+        run: pipx install prek==0.5.5
+      - name: Scan secrets with the trusted dedicated hook only
+        if: always()
+        working-directory: candidate
+        env:
+          GITLEAKS_CONFIG: ${{ github.workspace }}/trusted/.github/gitleaks.toml
+        # Do not run formatting hooks or load vendored example hook configurations.
+        run: prek run --config "$GITHUB_WORKSPACE/trusted/.pre-commit-config.yaml" gitleaks-dir --hook-stage manual --all-files
+      - name: Publish dispatched check result on the exact PR commit
+        if: ${{ always() && github.event_name == 'workflow_dispatch' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CHECK_RESULT: ${{ job.status }}
+        run: |
+          state=failure
+          if [ "$CHECK_RESULT" = success ]; then
+            state=success
+          fi
+          gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
+            -f state="$state" \
+            -f context='Skills checks' \
+            -f description="Trusted skills checks: $CHECK_RESULT" \
+            -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"

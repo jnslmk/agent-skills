@@ -1,0 +1,4 @@
+title = "Trusted default secret detection rules"
+
+[extend]
+useDefault = true

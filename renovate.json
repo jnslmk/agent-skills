@@ -1,0 +1,47 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "enabledManagers": ["custom.regex", "github-actions", "pre-commit"],
+  "includePaths": ["upstream.json", ".pre-commit-config.yaml", ".github/workflows/**"],
+  "automerge": false,
+  "prHourlyLimit": 0,
+  "prConcurrentLimit": 0,
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^upstream\\.json$/"],
+      "matchStrings": [
+        "\"(?<depName>[A-Za-z0-9][A-Za-z0-9_-]*)\"\\s*:\\s*\\{[^{}]*?\"rev\"\\s*:\\s*\"(?<currentDigest>[0-9a-f]{40})\"[^{}]*?\"source\"\\s*:\\s*\"github:(?<packageName>[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)\"[^{}]*?\\}"
+      ],
+      "packageNameTemplate": "https://github.com/{{{packageName}}}",
+      "currentValueTemplate": "main",
+      "datasourceTemplate": "git-refs"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^\\.github/workflows/renovate\\.yml$/"],
+      "matchStrings": ["npx --yes renovate@(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)"],
+      "depNameTemplate": "renovate",
+      "datasourceTemplate": "npm"
+    }
+  ],
+  "pre-commit": {"enabled": true},
+  "packageRules": [
+    {
+      "matchManagers": ["custom.regex"],
+      "matchDatasources": ["git-refs"],
+      "groupName": null,
+      "branchTopic": "skill-{{depNameSanitized}}-{{currentValue}}",
+      "commitMessageTopic": "vendored skill {{depName}}",
+      "labels": ["upstream-skills"],
+      "prBodyNotes": [
+        "Pristine skills are materialized at the candidate SHA, including executable bits and rev_date. Local forks retain their original rev and record candidate_rev; the failed post task and Skills checks require manual review. Never merge a pin-only update."
+      ],
+      "postUpgradeTasks": {
+        "commands": ["python3 scripts/sync.py --renovate"],
+        "executionMode": "branch",
+        "fileFilters": ["upstream.json", "!(scripts|.github|.git)/**"]
+      }
+    }
+  ]
+}

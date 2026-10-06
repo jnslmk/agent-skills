@@ -1,149 +1,235 @@
 #!/usr/bin/env python3
-"""Conservative upstream sync for the agent-skills repo.
+"""Conservative upstream sync: fast-forward pristine skills, never overwrite forks.
 
-For every entry in upstream.json with a pinned ``rev``:
-  base            = upstream files at the pinned rev
-  ours            = files on disk
-  theirs          = upstream files at the newest fetched rev
-  ours == base    -> fast-forward: copy theirs over, advance the pin
-  otherwise       -> REFUSE, print the diff summary, leave the pin (fork)
+python3 scripts/sync.py                    # fetch + report, no writes
+python3 scripts/sync.py --apply [skills]    # apply pristine updates
+python3 scripts/sync.py --renovate          # materialize working manifest's pins
+python3 scripts/sync.py --check --base-ref origin/main  # read-only PR pin gate
 
-Skills without a pinned rev (own:, anthropic:, plugin:) are reported, never touched.
-
-Usage:
-  python3 scripts/sync.py            # fetch + report (no changes)
-  python3 scripts/sync.py --apply    # fast-forward pristine skills
-  python3 scripts/sync.py --apply tdd retro  # only these skills
-
-Mirrors live in ~/.cache/agent-skills-mirrors/ (gitignored, refetchable).
+Renovate's old pins come from HEAD:upstream.json, not its modified working copy.
+Failed candidates retain their old rev and record candidate_rev for manual review.
+Mirrors are refetchable, under ~/.cache/agent-skills-mirrors/.
 """
-import json, os, shutil, subprocess, sys, hashlib
-from pathlib import Path
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path, PurePosixPath
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
 
-HERE = Path(__file__).resolve().parent.parent
+HERE = Path(os.environ.get("AGENT_SKILLS_ROOT", Path(__file__).resolve().parent.parent))
 MIRRORS = Path.home() / ".cache" / "agent-skills-mirrors"
 MANIFEST = HERE / "upstream.json"
 
 
-def sh(*a, cwd=None):
-    return subprocess.run(a, capture_output=True, text=True, cwd=cwd).stdout.strip()
+def sh(*args, cwd=None):
+    result = subprocess.run(args, capture_output=True, text=True, cwd=cwd)
+    if result.returncode:
+        raise RuntimeError(result.stderr.strip() or f"command failed: {args[0]}")
+    return result.stdout.strip()
+
+
+def safe_path(value):
+    """Reject paths that can escape the selected upstream skill or local root."""
+    if (not isinstance(value, str) or not value or "\\" in value or
+            "\0" in value or value.startswith("/") or
+            any(part in ("", ".", "..", ".git") for part in value.split("/"))):
+        raise ValueError(f"unsafe path: {value!r}")
+    return PurePosixPath(value)
+
+
+def validate_entry(name, entry):
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]*", name) or name == "scripts":
+        raise ValueError(f"unsafe skill name: {name!r}")
+    source = entry.get("source", "")
+    if not re.fullmatch(r"github:[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", source):
+        raise ValueError(f"invalid GitHub source: {source!r}")
+    if any(part in (".", "..") for part in source[7:].split("/")):
+        raise ValueError(f"invalid GitHub source: {source!r}")
+    safe_path(entry["path"])
+    if not re.fullmatch(r"[0-9a-f]{40}", entry.get("rev", "")):
+        raise ValueError(f"invalid commit pin for {name}")
+    dest = HERE / name
+    if dest.is_symlink():
+        raise ValueError(f"symlinked skill directory: {name}")
+    return dest
 
 
 def ensure_mirror(url):
     MIRRORS.mkdir(parents=True, exist_ok=True)
-    name = url.rstrip("/").rstrip(".git").rsplit("/", 2)[-2:]
-    d = MIRRORS / "__".join(name)
-    if not (d / ".git").exists():
+    name = url.removesuffix(".git").rsplit("/", 2)[-2:]
+    mirror = MIRRORS / "__".join(name)
+    if not (mirror / ".git").exists():
         print(f"cloning {url} ...")
-        sh("git", "clone", "-q", "--filter=blob:none", url, str(d))
-    sh("git", "-C", str(d), "fetch", "-q", "origin")
-    return d
+        sh("git", "clone", "-q", "--filter=blob:none", "--", url, str(mirror))
+    sh("git", "-C", str(mirror), "fetch", "-q", "origin")
+    return mirror
 
 
-def head_rev(d):
-    return sh("git", "-C", str(d), "rev-parse", "origin/HEAD") or \
-        sh("git", "-C", str(d), "rev-parse", "origin/main") or \
-        sh("git", "-C", str(d), "rev-parse", "origin/master")
+def head_rev(mirror):
+    for ref in ("origin/HEAD", "origin/main", "origin/master"):
+        try:
+            return sh("git", "-C", str(mirror), "rev-parse", "--verify", f"{ref}^{{commit}}")
+        except RuntimeError:
+            continue
+    raise RuntimeError("no upstream default branch found")
 
 
 def tree_at(mirror, rev, sub):
-    """relpath -> (git blob sha) for every file under sub at rev."""
-    out, cur = {}, sub.rstrip("/")
-    txt = sh("git", "-C", str(mirror), "ls-tree", "-r", rev, "--", cur)
-    for line in txt.splitlines():
+    """Relative path -> (git mode, blob SHA); reject unsupported upstream entries."""
+    safe_path(sub)
+    if not re.fullmatch(r"[0-9a-f]{40}", rev):
+        raise ValueError("expected full commit SHA")
+    sh("git", "-C", str(mirror), "rev-parse", "--verify", f"{rev}^{{commit}}")
+    tree = {}
+    result = sh("git", "-C", str(mirror), "ls-tree", "-rz", rev, "--", sub)
+    for line in result.split("\0"):
+        if not line:
+            continue
         meta, path = line.split("\t", 1)
-        out[path[len(cur) + 1:]] = meta.split()[2]
-    return out
+        mode, kind, sha = meta.split()
+        if not path.startswith(sub + "/"):
+            raise ValueError(f"not a skill directory: {sub}")
+        rel = path[len(sub) + 1:]
+        safe_path(rel)
+        if kind != "blob" or mode not in ("100644", "100755"):
+            raise ValueError(f"unsupported upstream file mode {mode}: {path}")
+        tree[rel] = (mode, sha)
+    if "SKILL.md" not in tree:
+        raise ValueError(f"missing upstream skill at {rev}:{sub}")
+    return tree
 
 
-def blob(mirror, rev, path):
-    r = subprocess.run(["git", "-C", str(mirror), "show", f"{rev}:{path}"],
-                       capture_output=True)
-    return r.stdout if r.returncode == 0 else None
+def blob(mirror, sha):
+    result = subprocess.run(["git", "-C", str(mirror), "cat-file", "blob", sha],
+                            capture_output=True)
+    if result.returncode:
+        raise RuntimeError(result.stderr.decode(errors="replace").strip())
+    return result.stdout
 
 
-def dump_tree(mirror, rev, sub, dest):
-    """Materialize upstream tree at rev/sub into dest/ (for fast-forward apply)."""
-    if dest.exists():
-        shutil.rmtree(dest)
-    dest.mkdir(parents=True)
-    for rel in tree_at(mirror, rev, sub):
-        data = blob(mirror, rev, f"{sub.rstrip('/')}/{rel}")
-        if data is None:
+def disk_tree(dest):
+    if not dest.is_dir() or dest.is_symlink():
+        raise ValueError(f"missing or symlinked local skill: {dest.name}")
+    tree = {}
+    for path in dest.rglob("*"):
+        if path.is_symlink():
+            raise ValueError(f"local symlink: {path.relative_to(dest)}")
+        if path.is_dir():
             continue
-        p = dest / rel
-        p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_bytes(data)
+        if not path.is_file():
+            raise ValueError(f"unsupported local file: {path.relative_to(dest)}")
+        data = path.read_bytes()
+        sha = hashlib.sha1(b"blob %d\0" % len(data) + data).hexdigest()
+        mode = "100755" if path.stat().st_mode & 0o100 else "100644"
+        tree[path.relative_to(dest).as_posix()] = (mode, sha)
+    return tree
 
 
-def disk_files(d):
-    return {str(p.relative_to(d)): p.read_bytes() for p in d.rglob("*") if p.is_file()}
-
-
-def main():
-    apply = "--apply" in sys.argv
-    only = {a for a in sys.argv[1:] if not a.startswith("-")}
-    man = json.loads(MANIFEST.read_text())
-    mirrors = {}
-    updated, refused, untouched, errors = [], [], [], []
-
-    for name, e in sorted(man["skills"].items()):
-        if only and name not in only:
-            continue
-        src = e.get("source", "")
-        if not (src.startswith("github:") and e.get("rev")):
-            untouched.append(name)
-            continue
-        owner_repo = src.split(":", 1)[1]
-        url = f"https://github.com/{owner_repo}.git"
+def dump_tree(mirror, tree, dest):
+    """Stage every blob before replacing; roll back if the final rename fails."""
+    with tempfile.TemporaryDirectory(prefix=".sync-", dir=dest.parent) as tmp:
+        candidate = Path(tmp) / "candidate"
+        candidate.mkdir()
+        for rel, (mode, sha) in tree.items():
+            path = candidate / rel
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(blob(mirror, sha))
+            path.chmod(0o755 if mode == "100755" else 0o644)
+        backup = Path(tmp) / "previous"
+        dest.rename(backup)
         try:
-            m = mirrors.get(url) or ensure_mirror(url)
-            mirrors[url] = m
-            new = head_rev(m)
-            base, theirs = tree_at(m, e["rev"], e["path"]), tree_at(m, new, e["path"])
-            if not theirs:
-                errors.append((name, f"path {e['path']} gone upstream"))
-                continue
-            local_dir = HERE / name
-            ours = {k: hashlib.sha1(b"blob %d\0" % len(v) + v).hexdigest()
-                    for k, v in disk_files(local_dir).items()}
-            if set(ours) != set(base) or any(ours[k] != base[k] for k in base):
-                changed = sorted(k for k in set(ours) | set(base)
-                                 if ours.get(k) != base.get(k))[:6]
-                refused.append((name, changed))
-                continue
-            if base == theirs:
-                e["rev"], e["rev_date"] = new, sh(
-                    "git", "-C", str(m), "log", "-1", "--format=%cs", new)
-                man["skills"][name] = e
-                updated.append((name, "rev-only (content identical)"))
-                continue
-            if apply:
-                dump_tree(m, new, e["path"], local_dir)
-                e["rev"], e["rev_date"] = new, sh(
-                    "git", "-C", str(m), "log", "-1", "--format=%cs", new)
-                man["skills"][name] = e
-                updated.append((name, "fast-forwarded"))
-            else:
-                diff_n = len(set(theirs) ^ set(base)) + \
-                    sum(1 for k in set(theirs) & set(base) if theirs[k] != base[k])
-                updated.append((name, f"would fast-forward ({diff_n} files)"))
-        except Exception as ex:  # noqa: BLE001 - report, keep going
-            errors.append((name, str(ex)[:100]))
+            candidate.rename(dest)
+        except OSError:
+            backup.rename(dest)
+            raise
 
-    if apply and updated:
+
+def manifest_at(ref):
+    if not ref or ref.startswith("-") or not re.fullmatch(r"[A-Za-z0-9_./-]+", ref):
+        raise ValueError("invalid base ref")
+    return json.loads(sh("git", "show", f"{ref}:upstream.json", cwd=HERE))
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--apply", action="store_true")
+    mode.add_argument("--renovate", action="store_true")
+    mode.add_argument("--check", action="store_true")
+    parser.add_argument("--base-ref", default="origin/main")
+    parser.add_argument("skills", nargs="*")
+    args = parser.parse_args(argv)
+    try:
+        man = json.loads(MANIFEST.read_text())
+        old = manifest_at("HEAD" if args.renovate else args.base_ref) if (args.renovate or args.check) else man
+    except (OSError, ValueError, RuntimeError) as exc:
+        print(f"ERR manifest: {exc}", file=sys.stderr)
+        return 1
+    mirrors, updated, failures = {}, [], []
+    for name, entry in sorted(man["skills"].items()):
+        if args.skills and name not in args.skills:
+            continue
+        if not entry.get("source", "").startswith("github:"):
+            if not args.renovate and not args.check:
+                print(f"SKIP {name}: own/proprietary/plugin")
+            continue
+        previous = old["skills"].get(name, {})
+        target = entry.get("rev")
+        changed = target != previous.get("rev")
+        try:
+            dest = validate_entry(name, entry)
+            if args.check and entry.get("candidate_rev"):
+                raise ValueError(f"blocked candidate {entry['candidate_rev']}; merge upstream into the fork manually")
+            if (args.renovate or args.check) and not changed:
+                continue
+            if args.renovate and any(entry.get(key) != previous.get(key) for key in ("source", "path")):
+                raise ValueError("Renovate may only change commit pins, not source/path")
+            url = f"https://github.com/{entry['source'][7:]}.git"
+            mirror = mirrors.get(url)
+            if mirror is None:
+                mirror = ensure_mirror(url)
+                mirrors[url] = mirror
+            if not args.renovate and not args.check:
+                target = head_rev(mirror)
+            theirs = tree_at(mirror, target, entry["path"])
+            ours = disk_tree(dest)
+            if args.check:
+                if ours != theirs:
+                    raise ValueError("changed pin does not match vendored files (pin-only update or unresolved fork)")
+                print(f"OK {name}: files match {target}")
+                continue
+            base = tree_at(mirror, previous["rev"], entry["path"])
+            if ours != base:
+                different = sorted(k for k in set(ours) | set(base) if ours.get(k) != base.get(k))
+                raise ValueError(f"locally diverged; refusing overwrite: {', '.join(different[:6])}")
+            date = sh("git", "-C", str(mirror), "show", "-s", "--format=%cs", target)
+            if args.apply or args.renovate:
+                if ours != theirs:
+                    dump_tree(mirror, theirs, dest)
+                entry["rev"], entry["rev_date"] = target, date
+                entry.pop("candidate_rev", None)
+            updated.append(name)
+            print(f"FF {name}: {'applied' if args.apply or args.renovate else 'would update'} {target}")
+        except (OSError, ValueError, KeyError, RuntimeError) as exc:
+            failures.append(name)
+            if args.renovate and changed and previous.get("rev"):
+                entry["rev"] = previous["rev"]
+                if "rev_date" in previous:
+                    entry["rev_date"] = previous["rev_date"]
+                else:
+                    entry.pop("rev_date", None)
+                # ponytail: candidate data gives failed post tasks a truthful, reviewable PR.
+                entry["candidate_rev"] = target
+            print(f"KEEP {name}: {exc}", file=sys.stderr)
+    if (args.apply and updated) or (args.renovate and (updated or failures)):
         MANIFEST.write_text(json.dumps(man, indent=2, sort_keys=True) + "\n")
-
-    print(f"{'DRY-RUN — use --apply to fast-forward' if not apply else 'APPLIED'}\n")
-    for name, what in updated:
-        print(f"  FF   {name:<32} {what}")
-    for name, changed in refused:
-        print(f"  KEEP {name:<32} locally diverged: {', '.join(changed)}")
-    for name in untouched:
-        print(f"  SKIP {name:<32} no upstream pin (own/proprietary/plugin)")
-    for name, err in errors:
-        print(f"  ERR  {name:<32} {err}")
+    return 1 if failures else 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
