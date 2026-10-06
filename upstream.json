@@ -23,8 +23,8 @@
     "code-review": {
       "license": "MIT",
       "path": "skills/engineering/code-review",
-      "rev": "4588b32ecab9ecc9fc8cc6b6c5e7d675b6004b0d",
-      "rev_date": "2026-10-05",
+      "rev": "7a030a8b0dcaa601bb0dda9aaf174affb3d61145",
+      "rev_date": "2026-10-06",
       "source": "github:mattpocock/skills"
     },
     "codebase-design": {
