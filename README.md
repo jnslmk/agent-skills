@@ -19,7 +19,7 @@ repo tracks them. OMP discovers them flat (`<name>/SKILL.md`); do not nest.
 |---|---|---|---|
 | `mattpocock/skills` | 33 (`tdd`, `code-review`, …) | MIT | fork: `ask-matt` mentions `/implement-batch` |
 | `vercel-labs/skills` | 1 (`find-skills`) | MIT | |
-| `pbakaus/impeccable` | 1 (`impeccable`) | Apache-2.0 | local copy adapted for this setup |
+| `pbakaus/impeccable` | 1 (`impeccable`) | Apache-2.0 | pristine OpenCode export: `.opencode/skills/impeccable` |
 | `nextlevelbuilder/ui-ux-pro-max-skill` | 1 (`ui-ux-pro-max`) | MIT | base = `.claude/skills/ui-ux-pro-max` |
 | own (`jnslmk/…`) | 14 + `implement-batch`, `implement-review`, `rtk` | MIT | homelab-*, nas-ops, config-gc, canary-watch, … |
 | `anthropics/skills` | `docx`, `pdf`, `xlsx`, `frontend-design`, `mcp-builder`, `webapp-testing` — **not committed** | proprietary, no redistribution | stay on disk, update via the plugin checkout |
@@ -57,7 +57,7 @@ do not trigger GitHub's normal `pull_request` event. Checks use trusted main-bra
 automation with read-only content access and permission to publish the dispatched
 result as a `Skills checks` commit status on the exact PR SHA (dispatch-run checks
 alone do not satisfy PR required checks). Only the non-mutating secret scanner
-hook runs in CI; existing local commit hooks are unchanged.
+hook runs in CI; local secret-scanning and merge-conflict hooks remain unchanged.
 
 ### Manually merging a fork
 
@@ -89,6 +89,10 @@ python3 scripts/sync.py --check --base-ref origin/main
 
 `prek install` once per clone. Gitleaks blocks secrets; baseline (2026-10-06)
 was clean. New skills: add an `upstream.json` entry (or `own:`), commit.
+
+The `end-of-file-fixer` formatting hook runs only on repository-owned root files,
+`scripts/` and `.github/`. Vendored skill files are excluded so their bytes retain
+the pinned upstream commit's provenance and remain eligible for pristine updates.
 
 The normal staged-files Gitleaks hook stays unchanged. CI uses the separate
 manual-stage `gitleaks-dir` alias to scan the checked-out directory, including

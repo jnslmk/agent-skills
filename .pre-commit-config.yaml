@@ -14,4 +14,5 @@ repos:
     rev: v6.0.0
     hooks:
       - id: end-of-file-fixer
+        files: ^(?:\.github/|scripts/|[^/]+$)
       - id: check-merge-conflict
