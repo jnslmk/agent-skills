@@ -2,6 +2,7 @@
   "_comment": "source = github:<owner>/<repo> pins an upstream path; own:/anthropic:/plugin: are never touched by scripts/sync.py",
   "skills": {
     "ask-matt": {
+      "candidate_rev": "7a030a8b0dcaa601bb0dda9aaf174affb3d61145",
       "license": "MIT",
       "note": "fork: merged upstream 2026-10-06, keeps /implement-batch routing + CONTEXT.md vocabulary",
       "path": "skills/engineering/ask-matt",
