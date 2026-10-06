@@ -1,0 +1,362 @@
+{
+  "_comment": "source = github:<owner>/<repo> pins an upstream path; own:/anthropic:/plugin: are never touched by scripts/sync.py",
+  "skills": {
+    "ask-matt": {
+      "license": "MIT",
+      "note": "fork: merged upstream 2026-10-06, keeps /implement-batch routing + CONTEXT.md vocabulary",
+      "path": "skills/engineering/ask-matt",
+      "rev": "4588b32ecab9ecc9fc8cc6b6c5e7d675b6004b0d",
+      "rev_date": "2026-10-05",
+      "source": "github:mattpocock/skills"
+    },
+    "canary-watch": {
+      "license": "MIT",
+      "source": "own:"
+    },
+    "claude-handoff": {
+      "license": "MIT",
+      "path": "skills/in-progress/claude-handoff",
+      "rev": "4588b32ecab9ecc9fc8cc6b6c5e7d675b6004b0d",
+      "rev_date": "2026-10-05",
+      "source": "github:mattpocock/skills"
+    },
+    "code-review": {
+      "license": "MIT",
+      "path": "skills/engineering/code-review",
+      "rev": "4588b32ecab9ecc9fc8cc6b6c5e7d675b6004b0d",
+      "rev_date": "2026-10-05",
+      "source": "github:mattpocock/skills"
+    },
+    "codebase-design": {
+      "license": "MIT",
+      "path": "skills/engineering/codebase-design",
+      "rev": "4588b32ecab9ecc9fc8cc6b6c5e7d675b6004b0d",
+      "rev_date": "2026-10-05",
+      "source": "github:mattpocock/skills"
+    },
+    "config-gc": {
+      "license": "MIT",
+      "source": "own:"
+    },
+    "data-scraper-agent": {
+      "license": "MIT",
+      "source": "own:"
+    },
+    "diagnosing-bugs": {
+      "license": "MIT",
+      "path": "skills/engineering/diagnosing-bugs",
+      "rev": "4588b32ecab9ecc9fc8cc6b6c5e7d675b6004b0d",
+      "rev_date": "2026-10-05",
+      "source": "github:mattpocock/skills"
+    },
+    "docx": {
+      "license": "proprietary (no distribution)",
+      "source": "anthropic:anthropics/skills (PROPRIETARY - do not redistribute)"
+    },
+    "domain-modeling": {
+      "license": "MIT",
+      "path": "skills/engineering/domain-modeling",
+      "rev": "4588b32ecab9ecc9fc8cc6b6c5e7d675b6004b0d",
+      "rev_date": "2026-10-05",
+      "source": "github:mattpocock/skills"
+    },
+    "find-skills": {
+      "license": "MIT",
+      "path": "skills/find-skills",
+      "rev": "14cf84aa922cccc7e5b11fee5af9a01b3750fddf",
+      "rev_date": "2026-10-05",
+      "source": "github:vercel-labs/skills"
+    },
+    "frontend-design": {
+      "license": "proprietary (no distribution)",
+      "source": "anthropic:anthropics/skills (PROPRIETARY - do not redistribute)"
+    },
+    "git-workflow": {
+      "license": "MIT",
+      "source": "own:"
+    },
+    "grill-me": {
+      "license": "MIT",
+      "path": "skills/productivity/grill-me",
+      "rev": "4588b32ecab9ecc9fc8cc6b6c5e7d675b6004b0d",
+      "rev_date": "2026-10-05",
+      "source": "github:mattpocock/skills"
+    },
+    "grill-with-docs": {
+      "license": "MIT",
+      "path": "skills/engineering/grill-with-docs",
+      "rev": "4588b32ecab9ecc9fc8cc6b6c5e7d675b6004b0d",
+      "rev_date": "2026-10-05",
+      "source": "github:mattpocock/skills"
+    },
+    "grilling": {
+      "license": "MIT",
+      "path": "skills/productivity/grilling",
+      "rev": "4588b32ecab9ecc9fc8cc6b6c5e7d675b6004b0d",
+      "rev_date": "2026-10-05",
+      "source": "github:mattpocock/skills"
+    },
+    "handoff": {
+      "license": "MIT",
+      "path": "skills/productivity/handoff",
+      "rev": "4588b32ecab9ecc9fc8cc6b6c5e7d675b6004b0d",
+      "rev_date": "2026-10-05",
+      "source": "github:mattpocock/skills"
+    },
+    "homelab-network-readiness": {
+      "license": "MIT",
+      "source": "own:"
+    },
+    "homelab-network-setup": {
+      "license": "MIT",
+      "source": "own:"
+    },
+    "homelab-pihole-dns": {
+      "license": "MIT",
+      "source": "own:"
+    },
+    "homelab-vlan-segmentation": {
+      "license": "MIT",
+      "source": "own:"
+    },
+    "homelab-wireguard-vpn": {
+      "license": "MIT",
+      "source": "own:"
+    },
+    "impeccable": {
+      "license": "Apache-2.0",
+      "path": ".agents/skills/impeccable",
+      "rev": "508d7e8955de3b3caf2d8676e85206723d41a887",
+      "rev_date": "2026-10-01",
+      "source": "github:pbakaus/impeccable"
+    },
+    "implement": {
+      "license": "MIT",
+      "path": "skills/engineering/implement",
+      "rev": "4588b32ecab9ecc9fc8cc6b6c5e7d675b6004b0d",
+      "rev_date": "2026-10-05",
+      "source": "github:mattpocock/skills"
+    },
+    "implement-batch": {
+      "license": "MIT",
+      "path": "implement-batch",
+      "rev": "50885b35e114457f368be26cc64ccb3347666905",
+      "rev_date": "2026-09-11",
+      "source": "own:jnslmk/implement-skills"
+    },
+    "implement-review": {
+      "license": "MIT",
+      "path": "implement-review/skills/implement-review",
+      "rev": "50885b35e114457f368be26cc64ccb3347666905",
+      "rev_date": "2026-09-11",
+      "source": "own:jnslmk/implement-skills"
+    },
+    "implement-spec": {
+      "license": "MIT",
+      "path": "skills/engineering/implement-spec",
+      "rev": "4588b32ecab9ecc9fc8cc6b6c5e7d675b6004b0d",
+      "rev_date": "2026-10-05",
+      "source": "github:mattpocock/skills"
+    },
+    "improve-codebase-architecture": {
+      "license": "MIT",
+      "path": "skills/engineering/improve-codebase-architecture",
+      "rev": "4588b32ecab9ecc9fc8cc6b6c5e7d675b6004b0d",
+      "rev_date": "2026-10-05",
+      "source": "github:mattpocock/skills"
+    },
+    "loop-me": {
+      "license": "MIT",
+      "path": "skills/in-progress/loop-me",
+      "rev": "4588b32ecab9ecc9fc8cc6b6c5e7d675b6004b0d",
+      "rev_date": "2026-10-05",
+      "source": "github:mattpocock/skills"
+    },
+    "mcp-builder": {
+      "license": "proprietary (no distribution)",
+      "source": "anthropic:anthropics/skills (PROPRIETARY - do not redistribute)"
+    },
+    "nas-ops": {
+      "license": "MIT",
+      "source": "own:"
+    },
+    "pdf": {
+      "license": "proprietary (no distribution)",
+      "source": "anthropic:anthropics/skills (PROPRIETARY - do not redistribute)"
+    },
+    "prototype": {
+      "license": "MIT",
+      "path": "skills/engineering/prototype",
+      "rev": "4588b32ecab9ecc9fc8cc6b6c5e7d675b6004b0d",
+      "rev_date": "2026-10-05",
+      "source": "github:mattpocock/skills"
+    },
+    "research": {
+      "license": "MIT",
+      "path": "skills/engineering/research",
+      "rev": "4588b32ecab9ecc9fc8cc6b6c5e7d675b6004b0d",
+      "rev_date": "2026-10-05",
+      "source": "github:mattpocock/skills"
+    },
+    "resolving-merge-conflicts": {
+      "license": "MIT",
+      "note": "deleted upstream (archived to docs/engineering/resolving-merge-conflicts.md 2026-09); keeping local copy",
+      "source": "own:"
+    },
+    "retro": {
+      "license": "MIT",
+      "path": "skills/engineering/retro",
+      "rev": "4588b32ecab9ecc9fc8cc6b6c5e7d675b6004b0d",
+      "rev_date": "2026-10-05",
+      "source": "github:mattpocock/skills"
+    },
+    "rtk": {
+      "license": "unknown",
+      "note": "moved here from ~/.omp/agent/skills; origin unconfirmed",
+      "source": "own:"
+    },
+    "scaffold-exercises": {
+      "license": "MIT",
+      "path": "skills/misc/scaffold-exercises",
+      "rev": "4588b32ecab9ecc9fc8cc6b6c5e7d675b6004b0d",
+      "rev_date": "2026-10-05",
+      "source": "github:mattpocock/skills"
+    },
+    "security-review": {
+      "license": "MIT",
+      "source": "own:"
+    },
+    "setup-matt-pocock-skills": {
+      "license": "MIT",
+      "path": "skills/engineering/setup-matt-pocock-skills",
+      "rev": "4588b32ecab9ecc9fc8cc6b6c5e7d675b6004b0d",
+      "rev_date": "2026-10-05",
+      "source": "github:mattpocock/skills"
+    },
+    "setup-pre-commit": {
+      "license": "MIT",
+      "path": "skills/misc/setup-pre-commit",
+      "rev": "4588b32ecab9ecc9fc8cc6b6c5e7d675b6004b0d",
+      "rev_date": "2026-10-05",
+      "source": "github:mattpocock/skills"
+    },
+    "setup-ts-deep-modules": {
+      "license": "MIT",
+      "path": "skills/in-progress/setup-ts-deep-modules",
+      "rev": "4588b32ecab9ecc9fc8cc6b6c5e7d675b6004b0d",
+      "rev_date": "2026-10-05",
+      "source": "github:mattpocock/skills"
+    },
+    "skill-create": {
+      "license": "MIT",
+      "source": "own:"
+    },
+    "tdd": {
+      "license": "MIT",
+      "path": "skills/engineering/tdd",
+      "rev": "4588b32ecab9ecc9fc8cc6b6c5e7d675b6004b0d",
+      "rev_date": "2026-10-05",
+      "source": "github:mattpocock/skills"
+    },
+    "teach": {
+      "license": "MIT",
+      "path": "skills/productivity/teach",
+      "rev": "4588b32ecab9ecc9fc8cc6b6c5e7d675b6004b0d",
+      "rev_date": "2026-10-05",
+      "source": "github:mattpocock/skills"
+    },
+    "to-questionnaire": {
+      "license": "MIT",
+      "path": "skills/productivity/to-questionnaire",
+      "rev": "4588b32ecab9ecc9fc8cc6b6c5e7d675b6004b0d",
+      "rev_date": "2026-10-05",
+      "source": "github:mattpocock/skills"
+    },
+    "to-spec": {
+      "license": "MIT",
+      "path": "skills/engineering/to-spec",
+      "rev": "4588b32ecab9ecc9fc8cc6b6c5e7d675b6004b0d",
+      "rev_date": "2026-10-05",
+      "source": "github:mattpocock/skills"
+    },
+    "to-tickets": {
+      "license": "MIT",
+      "path": "skills/engineering/to-tickets",
+      "rev": "4588b32ecab9ecc9fc8cc6b6c5e7d675b6004b0d",
+      "rev_date": "2026-10-05",
+      "source": "github:mattpocock/skills"
+    },
+    "triage": {
+      "license": "MIT",
+      "path": "skills/engineering/triage",
+      "rev": "4588b32ecab9ecc9fc8cc6b6c5e7d675b6004b0d",
+      "rev_date": "2026-10-05",
+      "source": "github:mattpocock/skills"
+    },
+    "ui-ux-pro-max": {
+      "license": "MIT",
+      "note": "fork: milestone-2 refresh scripts adapted to the flat install (test files touching CLI/plugin layout fail by design); fixtures keep local runtime state (relevance-thresholds.json)",
+      "path": ".claude/skills/ui-ux-pro-max",
+      "rev": "477bcb28c9812b385cb51a4605ddf30d7b2266e2",
+      "rev_date": "2026-10-03",
+      "source": "github:nextlevelbuilder/ui-ux-pro-max-skill"
+    },
+    "wait-what": {
+      "license": "MIT",
+      "path": "skills/productivity/wait-what",
+      "rev": "4588b32ecab9ecc9fc8cc6b6c5e7d675b6004b0d",
+      "rev_date": "2026-10-05",
+      "source": "github:mattpocock/skills"
+    },
+    "wayfinder": {
+      "license": "MIT",
+      "path": "skills/engineering/wayfinder",
+      "rev": "4588b32ecab9ecc9fc8cc6b6c5e7d675b6004b0d",
+      "rev_date": "2026-10-05",
+      "source": "github:mattpocock/skills"
+    },
+    "webapp-testing": {
+      "license": "proprietary (no distribution)",
+      "source": "anthropic:anthropics/skills (PROPRIETARY - do not redistribute)"
+    },
+    "wizard": {
+      "license": "MIT",
+      "path": "skills/engineering/wizard",
+      "rev": "4588b32ecab9ecc9fc8cc6b6c5e7d675b6004b0d",
+      "rev_date": "2026-10-05",
+      "source": "github:mattpocock/skills"
+    },
+    "writing-beats": {
+      "license": "MIT",
+      "path": "skills/in-progress/writing-beats",
+      "rev": "4588b32ecab9ecc9fc8cc6b6c5e7d675b6004b0d",
+      "rev_date": "2026-10-05",
+      "source": "github:mattpocock/skills"
+    },
+    "writing-for-agents": {
+      "license": "MIT",
+      "path": "skills/productivity/writing-for-agents",
+      "rev": "4588b32ecab9ecc9fc8cc6b6c5e7d675b6004b0d",
+      "rev_date": "2026-10-05",
+      "source": "github:mattpocock/skills"
+    },
+    "writing-fragments": {
+      "license": "MIT",
+      "path": "skills/in-progress/writing-fragments",
+      "rev": "4588b32ecab9ecc9fc8cc6b6c5e7d675b6004b0d",
+      "rev_date": "2026-10-05",
+      "source": "github:mattpocock/skills"
+    },
+    "writing-shape": {
+      "license": "MIT",
+      "path": "skills/in-progress/writing-shape",
+      "rev": "4588b32ecab9ecc9fc8cc6b6c5e7d675b6004b0d",
+      "rev_date": "2026-10-05",
+      "source": "github:mattpocock/skills"
+    },
+    "xlsx": {
+      "license": "proprietary (no distribution)",
+      "source": "anthropic:anthropics/skills (PROPRIETARY - do not redistribute)"
+    }
+  }
+}

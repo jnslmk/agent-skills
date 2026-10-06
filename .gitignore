@@ -1,0 +1,9 @@
+# Agent skills — installed copies live in ~/.agents/skills, this repo is the store.
+# The six Anthropic-proprietary skills are never committed (see README).
+
+docx/
+frontend-design/
+mcp-builder/
+pdf/
+webapp-testing/
+xlsx/
