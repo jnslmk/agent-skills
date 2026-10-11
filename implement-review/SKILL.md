@@ -18,6 +18,41 @@ subagent that cannot write. You schedule, dispatch, adjudicate, and integrate.
 **Core principle:** fresh subagent per task + review from an agent that never saw the
 implementer's reasoning + a capped fix ladder that never silently drops a finding.
 
+## Model policy
+
+All implementation, review, repair, adjudication, and final-review dispatches use
+only `openai-codex/gpt-6-luna` or `openai-codex/gpt-6.1-sol`.
+
+Choose implementation by task difficulty, not by repair-round number:
+
+| Work | Agent profile | Model / effort |
+|---|---|---|
+| Clear, bounded ordinary implementation and its first repairs | `ir-implementer` | Luna / high |
+| Ambiguous, cross-system or time-sensitive implementation | `ir-implementer-sol` | Sol / medium |
+| Authentication, authorization, concurrency, money, irreversible migrations, compatibility-critical APIs or difficult debugging | `ir-implementer-hard` | Sol / high |
+| Repair after a material finding survives an unsuccessful approach without verified progress | Fresh `ir-implementer-hard` | Sol / high |
+| Review, re-review, adjudication and final integrated review | Fresh `ir-reviewer` | Sol / high |
+
+Keep review on Sol even when Sol implemented the candidate. After a failed repair
+without verified progress, replace a Luna implementer with a fresh Sol implementer
+before the next permitted repair; do not spend the ordinary budget repeating the
+same approach on Luna. Apply the existing stagnation gate before dispatching:
+model escalation never overrides a stop or resets product/harness counters.
+Once a task selects or escalates to Sol, keep its implementation on Sol.
+
+Record the selected profile, model, effort, routing reason and any escalation in
+the ledger before dispatch; preserve that selection across resumes. These are
+operating defaults, not a proven optimal Luna/Sol pairing. Increase Sol effort to
+`xhigh` only for a specific hard analysis with evidence justifying the cost;
+do not automatically increase effort with round count or default to `max`.
+
+Ordinary Luna implementation may fall back to Sol on provider failure. Sol-required
+implementation and all reviews/adjudications have no Luna fallback; unavailable
+Sol blocks that dispatch. Provider failures never expand this allowlist.
+Generic agents or effort overrides must be explicitly pinned to the selected
+model and effort. If the harness cannot enforce that selection, use the matching
+configured profile; if none is available, mark the dispatch blocked.
+
 ## Why the separation is strict
 
 A reviewer that shares the implementer's context does not review — it ratifies. A
@@ -154,10 +189,11 @@ A compacted or resumed run must not silently change modes mid-flight.
 
 ### Dispatch the implementer
 
-Fresh subagent, no inherited session history. Use the `ir-implementer` agent if the
-harness has it; otherwise a generic subagent. Supply the current
-`references/implementer-brief.md` in either case: a built-in profile may carry an
-older embedded brief. Current skill instructions govern the dispatch.
+Fresh subagent, no inherited session history. Select the implementer profile from
+**Model policy**; use a generic subagent only when its model and effort can be
+explicitly pinned. Supply the current `references/implementer-brief.md` in either
+case: a built-in profile may carry an older embedded brief. Current skill
+instructions govern the dispatch.
 
 Give it exactly this and nothing more:
 
@@ -196,16 +232,11 @@ When an implementer cannot start or complete because of a provider failure:
    dispatch, inspect the declared write-set for partial edits and make the new
    implementer continue safely from the current tree.
 
-The fallback order is:
-
-```
-ir-implementer → alternate implementation model/provider → generic task agent
-```
-
-The generic agent receives the same implementer brief and hard write-set
-boundary; it is not a reason to relax repository or git-state rules. If every
-fallback is unavailable, mark the task `blocked: provider-unavailable` and
-surface the provider evidence to the user. Do not silently retry for hours.
+Use the eligible fallback in **Model policy**, with the same implementer brief and
+hard write-set boundary for each fresh dispatch. Respect the task's recorded Sol
+selection: provider failure cannot downgrade it to Luna. If no eligible model is
+available, mark the task `blocked: provider-unavailable` and surface the provider
+evidence to the user. Do not silently retry for hours.
 
 This execution fallback ends when an implementer produces an artifact. Review
 then starts normally with a fresh read-only reviewer; provider fallback is not

@@ -34,6 +34,8 @@ finding, moving its line, another opinion, or an unverified claim is not progres
 Apply stagnation **before** considering an extension:
 
 - After the first unsuccessful approach to a finding, use a fresh implementer.
+  Apply `SKILL.md`'s Model policy to its model/effort; changing models does not
+  reset counters or bypass the remaining stagnation gates.
 - After two materially distinct unsuccessful approaches with neither new diagnostic
   evidence nor meaningful reduction, escalate that finding.
 - Two consecutive stage cycles without verified progress stop automatic repair.
