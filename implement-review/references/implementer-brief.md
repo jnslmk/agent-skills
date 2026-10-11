@@ -1,8 +1,8 @@
 # Implementer brief
 
 Paste this verbatim as the subagent's instructions, filling the `{{...}}` slots.
-Where the harness has an `ir-implementer` agent, that agent already carries this
-brief — pass only the slots.
+Also supply it when using a built-in `ir-implementer`: its embedded brief may be
+older. Current skill instructions govern the dispatch.
 
 ---
 
@@ -57,9 +57,17 @@ does what you need. Adding a third way to do something already done twice is a f
 **Do exactly the task.** Not the task plus an improvement you noticed. If you spot
 something genuinely wrong outside the task, note it in your report — do not fix it.
 
-**Verify before reporting.** Run the tests. Run the linter. If they fail because of
-your change, fix it. If they fail for a pre-existing reason, say so explicitly and
-show the failure.
+**Hand off runnable verification.** Edit source and report when the candidate is
+ready; the orchestrator runs tests, lint and behavioural checks afterwards, with
+shared runtime/build state serialised. Provide exact commands/scenarios and disclose
+unverified claims. Do not run builds, tests, linters or formatters mid-flight.
+
+**Separate product defects from broken verification.** A broken fixture, probe or
+environment invalidates the result; identify the evidence rather than inventing a
+product patch. A harness-only repair stays within its declared boundary, preserves
+the failed evidence and includes a minimal runnable smoke for the orchestrator.
+Changing acceptance assertions, masking failures or editing production is not
+harness-only. The orchestrator applies `references/adjudication.md`'s counters.
 
 **Verification reaches real systems.** Your write-set bounds which files you may edit;
 it bounds nothing your shell can touch. Before every command ask: can this create,
@@ -95,9 +103,9 @@ exactly this structure:
 <path — one line each, with a phrase on what changed in it>
 
 ## Verification
-- Tests: <command run, result, any failures and whether pre-existing>
-- Lint: <command run, result>
-- Manual: <anything you checked by hand that the diff cannot show>
+- Tests: <exact command/scenario; not run, delegated to orchestrator>
+- Lint: <exact command; not run, delegated to orchestrator>
+- Behavioural proof: <minimal smoke and expected observable result>
 
 ## Deviations
 <Anything you did differently from the task, and why. "None" if none.>
@@ -106,10 +114,9 @@ exactly this structure:
 <Problems outside your boundary. "None" if none.>
 ```
 
-Be accurate here. The reviewer will see your diff and this report. A report claiming
-tests pass when they do not is worse than a report admitting they fail — it burns a
-review round and it is the fastest way to lose the reviewer's trust in everything else
-you wrote.
+Be accurate. Distinguish a proposed check from an observed result. The reviewer
+receives verification evidence where the diff alone cannot show the observation,
+not your implementation reasoning.
 
 ---
 
@@ -124,11 +131,18 @@ You will receive findings against your own work. For each one, do exactly one of
 
 You may not ignore a finding. Every one gets a fix or a written rejection.
 
+Keep the supplied finding IDs and root causes. State the repair approach and the
+remaining failing scenario, if any; moving code or renaming a symptom is not a new
+finding. A fresh repair implementer receives the same neutral finding/evidence
+packet and reports the same way. If a previous approach failed, use the new evidence
+to choose a materially different approach; report a missing prerequisite rather
+than repeating an ineffective patch. The orchestrator owns all continuation gates.
+
 Report using the same structure, plus:
 
 ```markdown
 ## Findings addressed
-| # | Finding | Action | Detail |
-|---|---------|--------|--------|
-| 1 | <short> | fixed / rejected | <what you changed, or why it is wrong> |
+| ID | Root cause | Action | Approach / evidence / residual failure |
+|----|------------|--------|----------------------------------------|
+| t1-F1 | <short> | repaired / rejected | <change or cited rebuttal; check to verify> |
 ```

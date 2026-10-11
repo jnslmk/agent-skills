@@ -49,6 +49,10 @@ Before dispatching, record the starting revision and any pre-existing local chan
 in the ledger. Preserve the original request/spec alongside the task table; these
 are the baseline for the final integrated review, not just the individual tasks.
 
+Record checkable acceptance criteria, required behavioural verification, and its
+permitted side effects before implementation. These are the review's finish line;
+changing them requires an explicit user decision, not another fix round.
+
 **Write-set** is your prediction of which paths the task will touch, as globs. It
 drives every scheduling decision below, and it gets verified before dispatch — you are
 not trusted on it, and neither is the implementer.
@@ -151,16 +155,19 @@ A compacted or resumed run must not silently change modes mid-flight.
 ### Dispatch the implementer
 
 Fresh subagent, no inherited session history. Use the `ir-implementer` agent if the
-harness has it; otherwise a generic subagent with `references/implementer-brief.md`
-pasted as its instructions.
+harness has it; otherwise a generic subagent. Supply the current
+`references/implementer-brief.md` in either case: a built-in profile may carry an
+older embedded brief. Current skill instructions govern the dispatch.
 
 Give it exactly this and nothing more:
 
-- The task description, verbatim from the table
+- The task description, verbatim from the table, and its acceptance criteria
 - Its declared write-set, stated as a hard boundary
 - The working directory (worktree path in mode D, repo root otherwise)
 - Interfaces it must conform to — signatures, schemas, types it consumes
 - Global constraints: the project's conventions, its test command, its lint command
+- Required verification and permitted side effects; the orchestrator runs checks
+  after source is ready, serialising shared runtime/build state
 - A path to write its report to
 
 Do **not** give it: your reasoning, the other tasks, prior review findings from a
@@ -204,17 +211,35 @@ This execution fallback ends when an implementer produces an artifact. Review
 then starts normally with a fresh read-only reviewer; provider fallback is not
 part of the reviewer finding fix ladder below.
 
+### Verify the candidate
+
+Once source is ready, run the required behavioural checks against the exact
+candidate and record the command/scenario, snapshot and result. A failed fixture,
+probe or environment makes that evidence invalid; it does not establish a product
+bug. Preserve the failed run and use the bounded harness-repair branch in
+`references/adjudication.md` before trusting another run. Smoke a repaired harness
+on a minimal scenario before repeating full verification.
+
+Invalid or missing required evidence blocks completion. A passing review cannot
+waive it, and changing an assertion or production code is not a harness-only repair.
+
 ### Dispatch the reviewer
 
-Fresh subagent, `ir-reviewer` where available, brief in
-`references/reviewer-brief.md`. Two stages, in order:
+Fresh subagent, `ir-reviewer` where available. Supply the current
+`references/reviewer-brief.md` even with the built-in profile; do not assume its
+embedded instructions have been refreshed. Two stages, in order:
 
 1. **Spec compliance** — does it do what the task said, all of it, and nothing else?
 2. **Code quality** — correctness, edge cases, error paths, resource handling.
 
-Give the reviewer the **diff as a file** plus the task's stated requirements. Give it
-the implementer's *report* only if the report claims something the diff cannot show
-(a manual test performed, an external system checked).
+Give the reviewer the **diff as a file**, requirements and acceptance criteria.
+Fill `{{REVIEW_CONTEXT}}` with the initial/re-review stage, exact snapshot, required
+checks and their evidence. Include implementer observations only for results the
+diff cannot show; exclude its reasoning and proposed checks presented as results.
+
+On re-review, include neutral pending finding IDs, root causes, failing scenarios
+and evidence to check resolution. Treat them as claims to verify, not verdicts.
+Genuine newly discovered blockers remain eligible even on unchanged lines.
 
 **Never give the reviewer the implementer's reasoning or your session history.** This
 is not stylistic caution. LLM judges are measurably swayed by an assertive framing
@@ -265,43 +290,34 @@ is not fewer side effects, only unreported ones.
 |---|---|---|
 | 🔴 | Important | A bug that should be fixed before this lands |
 | 🟡 | Nit | Minor, worth fixing, not blocking |
-| 🟣 | Pre-existing | A real bug, but this change did not introduce it |
+| 🟣 | Pre-existing | An unrelated defect not introduced or exposed by this change |
 
-**Verification bar:** a claim about behaviour needs a `file:line` citation in the
-source. An inference from a function's name is not a finding. Enforce this — false
-positives cost a full round trip each, and they teach you to discount real findings.
+**Verification bar:** a behavioural finding needs a `file:line` citation, a reachable
+trigger/code path and concrete consumer impact. Assign a stable ID and root cause
+using `references/adjudication.md`; a renamed or relocated finding stays the same
+finding. Opinions and invalid harness results are not evidence of a product defect.
 
-🟣 findings are recorded in the ledger and reported at the end. They never block and
-never enter the fix ladder; fixing them is scope creep unless the user asks.
+Pre-existing notes are recorded and parked, not repaired in this run. An existing
+root cause now exposed by this change, or preventing an explicit acceptance
+criterion, remains an in-scope Important finding.
 
 ---
 
 ## Phase 3 — The fix ladder
 
-Full protocol in `references/adjudication.md`. Quality saturates after about three
-feedback rounds, and the first correction captures most of the gain, so the ladder is
-capped and escalating rather than open-ended:
+Read `references/adjudication.md` before the first repair. It is the authoritative
+protocol for counting cycles, findings, convergence, extensions and harness repairs.
+Allow five normal fix/re-review cycles; cycles 6–8 require a recorded evidence gate
+before each dispatch. Eight is the hard automatic cap, not a target or a verdict.
 
-| Round | Action |
-|---|---|
-| 1–3 | Resume the **same** implementer with the findings |
-| 4–5 | Fresh implementer, **more capable model** |
-| after 5 | **Stop.** Write a ruling for every open finding. Surface to the user |
+After an unsuccessful approach to a finding, use a fresh implementer; stop earlier
+when the convergence gate fails. Extensions require verified progress or a genuinely
+new material defect and a specific next repair/check. Rephrased findings, new task
+names and resumed sessions do not refresh the budget.
 
-Two rules that make the cap safe:
-
-- **Suppress 🟡 from round 2 onward.** Only 🔴 re-enters the loop. This is what stops
-  a one-line fix reaching round seven on style alone. Unfixed nits are recorded in
-  the ledger and reported, not silently dropped.
-- **No finding is ever silently discarded.** Every one ends in exactly one state:
-  fixed, rejected with written technical reasoning, or escalated to the user.
-
-**Disputes.** An implementer may reject a finding with evidence — that is legitimate,
-and reviewers are wrong often enough that forbidding it would be worse. But the
-dispute does not go back to the same reviewer as a follow-up turn; that is precisely
-the framing judges cave to. Dispatch a **fresh adjudicator** with the finding and the
-rebuttal presented as two peer artifacts, neither attributed as the incumbent. Record
-its ruling in the ledger.
+Only Important findings enter repair re-reviews. Every finding receives a recorded
+disposition. Disputes go to a fresh adjudicator with the finding and rebuttal as
+unattributed peer artifacts, following the bounded dispute protocol.
 
 ---
 
@@ -365,14 +381,14 @@ even when the implicated lines already passed task review.
 
 Record findings under `final` in the same ledger. For blocking findings, create one
 integration-repair task with an explicit write-set spanning the necessary owners
-and dispatch a fresh implementer. Use Phase 3's fix ladder and dispute protocol with
-one separate final-stage round counter: rounds 1–3 resume that repair implementer,
-rounds 4–5 use fresh stronger implementers. New findings do not reset this counter.
+and dispatch a fresh implementer. Apply Phase 3's complete protocol with one separate
+final-stage product counter and harness counter. New findings or repair-task names
+do not reset either counter; the same extension and stagnation gates apply.
 
 After each repair, serialize integration and behavioural verification, regenerate
-the aggregate diff, and dispatch a fresh final reviewer. Provide unresolved findings
-to check resolution, but no rebuttals or earlier verdicts; suppress nits from round 2
-onward. Re-review the complete combined artifact, not just the repair diff.
+the aggregate diff, and dispatch a fresh final reviewer. Provide neutral pending
+findings to check resolution, but no rebuttals or earlier verdicts. Re-review the
+complete combined artifact, not just the repair diff; genuine late blockers count.
 
 **Completion gate:** the latest integrated snapshot has a final `PASS`, every
 finding has a disposition, and combined behavioural verification has passed with
@@ -384,9 +400,9 @@ even if its task commits have already landed locally; report that state to the u
 
 ## The ledger
 
-`.implement-review/<run-id>/ledger.md`, gitignored. It holds the task table, wave
-assignments, the chosen mode and its justification, per-task round counters, and every
-finding with its disposition.
+`.implement-review/<run-id>/ledger.md`, gitignored. It holds acceptance criteria,
+the task table, schedule/mode, product and harness counters, convergence/extension
+decisions, and stable findings with their evidence, attempts and dispositions.
 
 This is what lets a run survive context compaction, and it is what makes "no silent
 discards" an auditable claim rather than an intention. Update it after every state
@@ -403,8 +419,10 @@ Add `.implement-review/` to the repo's `.gitignore` if it is not already there.
 ## Stop and ask the user when
 
 - A rebase or merge conflicts.
-- Tests fail for a reason the implementer could not fix within the ladder.
-- The fix ladder exhausts at round 5 with open 🔴 findings.
+- A convergence gate fails, an extension is not justified, or the hard cap is
+  reached with open Important findings.
+- Required verification remains invalid or unavailable, including an exhausted
+  harness-repair budget.
 - A task's real write-set escapes its declared one in a way that invalidates the
   schedule.
 - The work as described cannot be done without a decision you were not given —

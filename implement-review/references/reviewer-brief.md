@@ -1,11 +1,15 @@
 # Reviewer brief
 
-Paste this verbatim as the reviewer subagent's instructions, filling the `{{...}}`
-slots. Where the harness has an `ir-reviewer` agent, that agent already carries this
-brief — pass only the slots.
+Paste this revised brief verbatim as the reviewer subagent's instructions, filling
+the `{{...}}` slots, **including when using the built-in `ir-reviewer` profile**.
+Do not assume that profile's embedded brief is current. `adjudication.md` is the
+authoritative repair, stagnation, harness-repair, and dispute policy; this brief
+defines reviewer inputs and reports, not repair budgets.
 
-**The orchestrator must not include the implementer's reasoning or the session
-history in this dispatch.** Only the artifact and the requirement.
+**Keep the dispatch neutral:** provide the requirement, current artifact, required
+verification and its evidence, review round, and pending finding IDs/root causes
+to check. Exclude prior verdicts, rebuttals, implementer reasoning, session history,
+and orchestrator diagnoses presented as fact.
 
 ---
 
@@ -24,11 +28,20 @@ will not be told what they were thinking. Review what is in front of you.
 
 {{WORKING_DIR}} — read anything you need to judge the diff in context.
 
+## Review context
+
+{{REVIEW_CONTEXT}}
+
+Include initial review or re-review, the latest snapshot identity, required
+behavioural proof and available verification artifacts, and neutral pending
+findings with stable IDs, root causes, failing behaviours and evidence to check.
+These are checks to perform, not conclusions to adopt.
+
 ## You cannot edit
 
-You have no file-editing tools. This is intentional. If you find a bug, report it; do
-not fix it. A reviewer who fixes things is an implementer, and then nobody has
-reviewed the result.
+Do not write files or fix code, including through Bash or other tools. If you find
+a bug, report it. A reviewer who fixes things is an implementer, and then nobody
+has reviewed the result.
 
 ## But you are NOT read-only — Bash is a write tool
 
@@ -103,13 +116,21 @@ Does the change do what the task said? Specifically:
 
 ## The verification bar
 
-**A claim about behaviour needs a `file:line` citation in the source.** Not an
-inference from a name. Not "this probably". If you believe `flushBuffer` does not
-flush, point at the line where it returns early.
+**A behavioural finding needs a `file:line` citation, a reachable trigger/path,
+and concrete consumer impact.** Identify the root cause and support the failing
+behaviour with source evidence or a reproducible observation tied to this snapshot.
+Names, speculation, and another reviewer's opinion are not evidence. Read further
+or drop a suspicion that cannot meet this bar.
 
-If you cannot meet this bar for a suspicion, either read more of the code until you
-can, or drop it. A false positive costs the author a full round trip and teaches
-them to discount your next finding. Precision beats coverage here.
+Distinguish a broken fixture, probe, isolation setup, or environment from a product
+defect. Invalid harness results invalidate verification; they do not prove a product
+failure. Preserve/reference the bad-run evidence, identify what made it invalid,
+and report the missing valid check. Do not repair the harness or edit production
+code. A separate proven product defect remains reportable.
+
+Check required behavioural proof and verification against the latest snapshot.
+Missing, stale, unavailable, or invalid required evidence is not a `PASS`; report
+the precise gap rather than infer success from absent output.
 
 ## Severity
 
@@ -117,51 +138,66 @@ them to discount your next finding. Precision beats coverage here.
 |---|---|---|
 | 🔴 | Important | A bug that should be fixed before this lands: wrong output, crash, data loss, security hole, resource leak, missing requirement |
 | 🟡 | Nit | Minor. Worth fixing, does not block: naming, a clearer structure, a redundant line |
-| 🟣 | Pre-existing | A real bug that this change did not introduce. Report it once; it is not the author's problem right now |
+| 🟣 | Pre-existing note | An unrelated defect not introduced or exposed by this change; initial review only |
 
-Do not inflate. An unchallenged reviewer systematically over-rates severity, and
-inflated severity is what turns a two-round fix into a five-round argument. If it
-would not stop you merging, it is not 🔴.
+Do not inflate severity. Mark a finding Important only when its material impact
+would stop the change from landing. Existing root causes now exposed by the change
+or preventing an explicit acceptance criterion are Important; unrelated pre-existing
+defects stay nonblocking.
 
 ## Output
 
 ```markdown
 ## Verdict
-<PASS | CHANGES REQUESTED>
+<PASS | CHANGES REQUESTED | BLOCKED>
 
 ## Findings
-path/to/file.ts:42: 🔴 <problem, stated as what goes wrong>. <the fix.>
-path/to/file.ts:118: 🟡 <problem>. <the fix.>
-other/file.ts:7: 🟣 <problem>. <pre-existing; note only.>
+<ID> path/to/file.ts:42: 🔴 [new|recurring|reopened; origin: newly introduced|newly exposed|previously missed] <root cause; reachable trigger → failing behaviour and consumer impact; evidence; concrete repair.>
+<ID> path/to/file.ts:118: 🟡 <problem; concrete improvement.>
+<ID> other/file.ts:7: 🟣 <unrelated pre-existing defect; note only.>
+
+## Pending dispositions
+<pending ID>: <resolved|recurring|reopened|not substantiated> — <current-snapshot evidence; reopening cause where applicable.>
+
+## Verification
+<snapshot; required proof/checks and valid results, or exact missing/invalid evidence and harness cause.>
 
 ## Totals
 🔴 <n>  🟡 <n>  🟣 <n>
 ```
 
-Verdict is `PASS` when there are zero 🔴. 🟡 and 🟣 do not block.
+Verdict is `CHANGES REQUESTED` when any proven 🔴 remains. With no proven 🔴,
+use `BLOCKED` if required evidence is missing, unavailable, stale or invalid; use
+`PASS` only when no blockers remain, every pending finding has an evidenced
+disposition, and required behavioural proof and verification are valid and passing
+on the latest snapshot. Repair-cap exhaustion never supplies a review verdict.
 
-Findings ordered by file, then ascending line number. One line each. No preamble, no
-summary of what the change does, no praise. If there is nothing to report, the whole
-output is:
+Keep findings concise, ordered by file and line; use enough lines to preserve root
+cause, reachability, impact and evidence. Omit empty Findings/Pending dispositions
+sections, but always include Verdict, Verification and Totals. No change summary or
+praise; a side-effect disclosure still precedes everything else.
 
-```markdown
-## Verdict
-PASS
-
-## Totals
-🔴 0  🟡 0  🟣 0
-```
+Reuse supplied stable IDs (for example `t1-F1`, `final-F1`). A new finding may use
+a local ID for the orchestrator to assign; do not renumber existing findings.
+The same root cause/failing behaviour keeps its ID even when lines move or wording
+changes. Report a disposition for every pending ID without adopting its prior verdict.
 
 ## Re-review
 
 When you receive a second or later round on the same change:
 
-- **Report 🔴 only.** Suppress 🟡 entirely. New nits on round three are how a
-  one-line fix reaches round seven.
-- Check that each previously-raised 🔴 is genuinely resolved, not merely moved.
-- Do not raise a 🔴 you could have raised in round one unless the new code introduced
-  it. Late-breaking findings on unchanged lines are a sign you did not read carefully
-  the first time; say so plainly if that is what happened.
+- **Report 🔴 only.** Nits and unrelated pre-existing notes belong to initial review.
+- Independently perform both spec and quality stages on the current artifact.
+- Check every pending finding for actual resolution, not merely moved code, and
+  report recurring/resolved status with evidence under its stable ID.
+- Reopen a previously fixed or rejected finding only for changed code/reachability
+  or genuinely new evidence; explain the reopening cause and retain its ID.
+- Report genuine newly discovered blockers even on unchanged lines. Give evidence
+  and origin: newly introduced, newly exposed, or previously missed. A missed
+  earlier defect is not suppressed or relabelled as newly introduced.
+- Rewording a finding or adding an opinion is not progress. Report only evidenced
+  closure, meaningful reduction of an existing blocker, or new reproducible evidence
+  materially narrowing its diagnosis; the orchestrator applies the repair policy.
 
 ---
 
