@@ -236,8 +236,8 @@
     "setup-pre-commit": {
       "license": "MIT",
       "path": "skills/misc/setup-pre-commit",
-      "rev": "7a030a8b0dcaa601bb0dda9aaf174affb3d61145",
-      "rev_date": "2026-10-06",
+      "rev": "49dd158d1076134a641b33efb035946536778336",
+      "rev_date": "2026-10-09",
       "source": "github:mattpocock/skills"
     },
     "setup-ts-deep-modules": {
