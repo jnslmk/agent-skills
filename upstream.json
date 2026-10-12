@@ -126,8 +126,8 @@
     "impeccable": {
       "license": "Apache-2.0",
       "path": ".opencode/skills/impeccable",
-      "rev": "cf3d2fa07d3ad1814ac5fbbbb5b2043b795eaef1",
-      "rev_date": "2026-10-06",
+      "rev": "919dbeba520df760a157fe635be62faae88d58da",
+      "rev_date": "2026-10-12",
       "source": "github:pbakaus/impeccable"
     },
     "implement": {
