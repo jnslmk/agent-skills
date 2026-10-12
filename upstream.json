@@ -63,8 +63,8 @@
     "find-skills": {
       "license": "MIT",
       "path": "skills/find-skills",
-      "rev": "14cf84aa922cccc7e5b11fee5af9a01b3750fddf",
-      "rev_date": "2026-10-05",
+      "rev": "13e4063a1cf913f5606d57d42ab83a86f5001e04",
+      "rev_date": "2026-10-09",
       "source": "github:vercel-labs/skills"
     },
     "frontend-design": {
