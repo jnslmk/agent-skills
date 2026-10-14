@@ -151,6 +151,10 @@
       "rev_date": "2026-09-11",
       "source": "own:jnslmk/implement-skills"
     },
+    "implement-review-auto": {
+      "license": "MIT",
+      "source": "own:"
+    },
     "implement-spec": {
       "license": "MIT",
       "path": "skills/engineering/implement-spec",
