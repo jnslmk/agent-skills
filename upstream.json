@@ -298,6 +298,7 @@
       "source": "github:mattpocock/skills"
     },
     "ui-ux-pro-max": {
+      "candidate_rev": "7246805992a42b7bba37d4cac83b01416f0c6c44",
       "license": "MIT",
       "note": "fork: milestone-2 refresh scripts adapted to the flat install (test files touching CLI/plugin layout fail by design); fixtures keep local runtime state (relevance-thresholds.json)",
       "path": ".claude/skills/ui-ux-pro-max",
