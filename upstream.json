@@ -16,22 +16,22 @@
     "claude-handoff": {
       "license": "MIT",
       "path": "skills/in-progress/claude-handoff",
-      "rev": "7a030a8b0dcaa601bb0dda9aaf174affb3d61145",
-      "rev_date": "2026-10-06",
+      "rev": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "rev_date": "2026-10-31",
       "source": "github:mattpocock/skills"
     },
     "code-review": {
       "license": "MIT",
       "path": "skills/engineering/code-review",
-      "rev": "7a030a8b0dcaa601bb0dda9aaf174affb3d61145",
-      "rev_date": "2026-10-06",
+      "rev": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "rev_date": "2026-10-31",
       "source": "github:mattpocock/skills"
     },
     "codebase-design": {
       "license": "MIT",
       "path": "skills/engineering/codebase-design",
-      "rev": "7a030a8b0dcaa601bb0dda9aaf174affb3d61145",
-      "rev_date": "2026-10-06",
+      "rev": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "rev_date": "2026-10-31",
       "source": "github:mattpocock/skills"
     },
     "config-gc": {
@@ -45,8 +45,8 @@
     "diagnosing-bugs": {
       "license": "MIT",
       "path": "skills/engineering/diagnosing-bugs",
-      "rev": "7a030a8b0dcaa601bb0dda9aaf174affb3d61145",
-      "rev_date": "2026-10-06",
+      "rev": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "rev_date": "2026-10-31",
       "source": "github:mattpocock/skills"
     },
     "docx": {
@@ -56,8 +56,8 @@
     "domain-modeling": {
       "license": "MIT",
       "path": "skills/engineering/domain-modeling",
-      "rev": "7a030a8b0dcaa601bb0dda9aaf174affb3d61145",
-      "rev_date": "2026-10-06",
+      "rev": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "rev_date": "2026-10-31",
       "source": "github:mattpocock/skills"
     },
     "find-skills": {
@@ -78,29 +78,29 @@
     "grill-me": {
       "license": "MIT",
       "path": "skills/productivity/grill-me",
-      "rev": "7a030a8b0dcaa601bb0dda9aaf174affb3d61145",
-      "rev_date": "2026-10-06",
+      "rev": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "rev_date": "2026-10-31",
       "source": "github:mattpocock/skills"
     },
     "grill-with-docs": {
       "license": "MIT",
       "path": "skills/engineering/grill-with-docs",
-      "rev": "7a030a8b0dcaa601bb0dda9aaf174affb3d61145",
-      "rev_date": "2026-10-06",
+      "rev": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "rev_date": "2026-10-31",
       "source": "github:mattpocock/skills"
     },
     "grilling": {
       "license": "MIT",
       "path": "skills/productivity/grilling",
-      "rev": "7a030a8b0dcaa601bb0dda9aaf174affb3d61145",
-      "rev_date": "2026-10-06",
+      "rev": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "rev_date": "2026-10-31",
       "source": "github:mattpocock/skills"
     },
     "handoff": {
       "license": "MIT",
       "path": "skills/productivity/handoff",
-      "rev": "7a030a8b0dcaa601bb0dda9aaf174affb3d61145",
-      "rev_date": "2026-10-06",
+      "rev": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "rev_date": "2026-10-31",
       "source": "github:mattpocock/skills"
     },
     "homelab-network-readiness": {
@@ -126,15 +126,15 @@
     "impeccable": {
       "license": "Apache-2.0",
       "path": ".opencode/skills/impeccable",
-      "rev": "cf3d2fa07d3ad1814ac5fbbbb5b2043b795eaef1",
-      "rev_date": "2026-10-06",
+      "rev": "e89e3ada3e875a89ac2c5d33d11e65ebef6fe285",
+      "rev_date": "2026-11-01",
       "source": "github:pbakaus/impeccable"
     },
     "implement": {
       "license": "MIT",
       "path": "skills/engineering/implement",
-      "rev": "7a030a8b0dcaa601bb0dda9aaf174affb3d61145",
-      "rev_date": "2026-10-06",
+      "rev": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "rev_date": "2026-10-31",
       "source": "github:mattpocock/skills"
     },
     "implement-batch": {
@@ -151,25 +151,29 @@
       "rev_date": "2026-09-11",
       "source": "own:jnslmk/implement-skills"
     },
+    "implement-review-auto": {
+      "license": "MIT",
+      "source": "own:"
+    },
     "implement-spec": {
       "license": "MIT",
       "path": "skills/engineering/implement-spec",
-      "rev": "7a030a8b0dcaa601bb0dda9aaf174affb3d61145",
-      "rev_date": "2026-10-06",
+      "rev": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "rev_date": "2026-10-31",
       "source": "github:mattpocock/skills"
     },
     "improve-codebase-architecture": {
       "license": "MIT",
       "path": "skills/engineering/improve-codebase-architecture",
-      "rev": "7a030a8b0dcaa601bb0dda9aaf174affb3d61145",
-      "rev_date": "2026-10-06",
+      "rev": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "rev_date": "2026-10-31",
       "source": "github:mattpocock/skills"
     },
     "loop-me": {
       "license": "MIT",
       "path": "skills/in-progress/loop-me",
-      "rev": "7a030a8b0dcaa601bb0dda9aaf174affb3d61145",
-      "rev_date": "2026-10-06",
+      "rev": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "rev_date": "2026-10-31",
       "source": "github:mattpocock/skills"
     },
     "mcp-builder": {
@@ -187,15 +191,15 @@
     "prototype": {
       "license": "MIT",
       "path": "skills/engineering/prototype",
-      "rev": "7a030a8b0dcaa601bb0dda9aaf174affb3d61145",
-      "rev_date": "2026-10-06",
+      "rev": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "rev_date": "2026-10-31",
       "source": "github:mattpocock/skills"
     },
     "research": {
       "license": "MIT",
       "path": "skills/engineering/research",
-      "rev": "7a030a8b0dcaa601bb0dda9aaf174affb3d61145",
-      "rev_date": "2026-10-06",
+      "rev": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "rev_date": "2026-10-31",
       "source": "github:mattpocock/skills"
     },
     "resolving-merge-conflicts": {
@@ -206,8 +210,8 @@
     "retro": {
       "license": "MIT",
       "path": "skills/engineering/retro",
-      "rev": "7a030a8b0dcaa601bb0dda9aaf174affb3d61145",
-      "rev_date": "2026-10-06",
+      "rev": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "rev_date": "2026-10-31",
       "source": "github:mattpocock/skills"
     },
     "rtk": {
@@ -218,8 +222,8 @@
     "scaffold-exercises": {
       "license": "MIT",
       "path": "skills/misc/scaffold-exercises",
-      "rev": "7a030a8b0dcaa601bb0dda9aaf174affb3d61145",
-      "rev_date": "2026-10-06",
+      "rev": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "rev_date": "2026-10-31",
       "source": "github:mattpocock/skills"
     },
     "security-review": {
@@ -229,22 +233,22 @@
     "setup-matt-pocock-skills": {
       "license": "MIT",
       "path": "skills/engineering/setup-matt-pocock-skills",
-      "rev": "7a030a8b0dcaa601bb0dda9aaf174affb3d61145",
-      "rev_date": "2026-10-06",
+      "rev": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "rev_date": "2026-10-31",
       "source": "github:mattpocock/skills"
     },
     "setup-pre-commit": {
       "license": "MIT",
       "path": "skills/misc/setup-pre-commit",
-      "rev": "7a030a8b0dcaa601bb0dda9aaf174affb3d61145",
-      "rev_date": "2026-10-06",
+      "rev": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "rev_date": "2026-10-31",
       "source": "github:mattpocock/skills"
     },
     "setup-ts-deep-modules": {
       "license": "MIT",
       "path": "skills/in-progress/setup-ts-deep-modules",
-      "rev": "7a030a8b0dcaa601bb0dda9aaf174affb3d61145",
-      "rev_date": "2026-10-06",
+      "rev": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "rev_date": "2026-10-31",
       "source": "github:mattpocock/skills"
     },
     "skill-create": {
@@ -254,43 +258,43 @@
     "tdd": {
       "license": "MIT",
       "path": "skills/engineering/tdd",
-      "rev": "7a030a8b0dcaa601bb0dda9aaf174affb3d61145",
-      "rev_date": "2026-10-06",
+      "rev": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "rev_date": "2026-10-31",
       "source": "github:mattpocock/skills"
     },
     "teach": {
       "license": "MIT",
       "path": "skills/productivity/teach",
-      "rev": "7a030a8b0dcaa601bb0dda9aaf174affb3d61145",
-      "rev_date": "2026-10-06",
+      "rev": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "rev_date": "2026-10-31",
       "source": "github:mattpocock/skills"
     },
     "to-questionnaire": {
       "license": "MIT",
       "path": "skills/productivity/to-questionnaire",
-      "rev": "7a030a8b0dcaa601bb0dda9aaf174affb3d61145",
-      "rev_date": "2026-10-06",
+      "rev": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "rev_date": "2026-10-31",
       "source": "github:mattpocock/skills"
     },
     "to-spec": {
       "license": "MIT",
       "path": "skills/engineering/to-spec",
-      "rev": "7a030a8b0dcaa601bb0dda9aaf174affb3d61145",
-      "rev_date": "2026-10-06",
+      "rev": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "rev_date": "2026-10-31",
       "source": "github:mattpocock/skills"
     },
     "to-tickets": {
       "license": "MIT",
       "path": "skills/engineering/to-tickets",
-      "rev": "7a030a8b0dcaa601bb0dda9aaf174affb3d61145",
-      "rev_date": "2026-10-06",
+      "rev": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "rev_date": "2026-10-31",
       "source": "github:mattpocock/skills"
     },
     "triage": {
       "license": "MIT",
       "path": "skills/engineering/triage",
-      "rev": "7a030a8b0dcaa601bb0dda9aaf174affb3d61145",
-      "rev_date": "2026-10-06",
+      "rev": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "rev_date": "2026-10-31",
       "source": "github:mattpocock/skills"
     },
     "ui-ux-pro-max": {
@@ -304,15 +308,15 @@
     "wait-what": {
       "license": "MIT",
       "path": "skills/productivity/wait-what",
-      "rev": "7a030a8b0dcaa601bb0dda9aaf174affb3d61145",
-      "rev_date": "2026-10-06",
+      "rev": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "rev_date": "2026-10-31",
       "source": "github:mattpocock/skills"
     },
     "wayfinder": {
       "license": "MIT",
       "path": "skills/engineering/wayfinder",
-      "rev": "7a030a8b0dcaa601bb0dda9aaf174affb3d61145",
-      "rev_date": "2026-10-06",
+      "rev": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "rev_date": "2026-10-31",
       "source": "github:mattpocock/skills"
     },
     "webapp-testing": {
@@ -322,36 +326,36 @@
     "wizard": {
       "license": "MIT",
       "path": "skills/engineering/wizard",
-      "rev": "7a030a8b0dcaa601bb0dda9aaf174affb3d61145",
-      "rev_date": "2026-10-06",
+      "rev": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "rev_date": "2026-10-31",
       "source": "github:mattpocock/skills"
     },
     "writing-beats": {
       "license": "MIT",
       "path": "skills/in-progress/writing-beats",
-      "rev": "7a030a8b0dcaa601bb0dda9aaf174affb3d61145",
-      "rev_date": "2026-10-06",
+      "rev": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "rev_date": "2026-10-31",
       "source": "github:mattpocock/skills"
     },
     "writing-for-agents": {
       "license": "MIT",
       "path": "skills/productivity/writing-for-agents",
-      "rev": "7a030a8b0dcaa601bb0dda9aaf174affb3d61145",
-      "rev_date": "2026-10-06",
+      "rev": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "rev_date": "2026-10-31",
       "source": "github:mattpocock/skills"
     },
     "writing-fragments": {
       "license": "MIT",
       "path": "skills/in-progress/writing-fragments",
-      "rev": "7a030a8b0dcaa601bb0dda9aaf174affb3d61145",
-      "rev_date": "2026-10-06",
+      "rev": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "rev_date": "2026-10-31",
       "source": "github:mattpocock/skills"
     },
     "writing-shape": {
       "license": "MIT",
       "path": "skills/in-progress/writing-shape",
-      "rev": "7a030a8b0dcaa601bb0dda9aaf174affb3d61145",
-      "rev_date": "2026-10-06",
+      "rev": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "rev_date": "2026-10-31",
       "source": "github:mattpocock/skills"
     },
     "xlsx": {
