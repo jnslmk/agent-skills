@@ -1,15 +1,14 @@
 # Reviewer brief
 
-Paste this revised brief verbatim as the reviewer subagent's instructions, filling
-the `{{...}}` slots, **including when using the built-in `ir-reviewer` profile**.
-Do not assume that profile's embedded brief is current. `adjudication.md` is the
-authoritative repair, stagnation, harness-repair, and dispute policy; this brief
-defines reviewer inputs and reports, not repair budgets.
+Paste this brief verbatim as the independent reviewer's instructions, filling
+the `{{...}}` slots. `adjudication.md` is authoritative for repair limits,
+stagnation, launch correction, and disputes.
 
-**Keep the dispatch neutral:** provide the requirement, current artifact, required
-verification and its evidence, review round, and pending finding IDs/root causes
-to check. Exclude prior verdicts, rebuttals, implementer reasoning, session history,
-and orchestrator diagnoses presented as fact.
+Dispatch the complete integrated candidate once by default, after focused proof.
+Retain that independent read-only reviewer for repair closure. Supply the requirement,
+current artifact, proof, and stable pending IDs. The retained reviewer keeps its own
+findings; a fresh reviewer receives neutral pending claims rather than inherited
+verdicts or rebuttals. Neither receives author reasoning or diagnoses as facts.
 
 ---
 
@@ -114,23 +113,25 @@ Does the change do what the task said? Specifically:
 - **Tests**: do they test behaviour or do they restate the implementation? A test
   that cannot fail is a finding.
 
-## The verification bar
+## Review and verification
 
-**A behavioural finding needs a `file:line` citation, a reachable trigger/path,
-and concrete consumer impact.** Identify the root cause and support the failing
-behaviour with source evidence or a reproducible observation tied to this snapshot.
-Names, speculation, and another reviewer's opinion are not evidence. Read further
-or drop a suspicion that cannot meet this bar.
+Review the current combined change for spec compliance and code quality. The
+initial review may finish code inspection while required broad checks are still
+pending. Report the review outcome separately from verification status: do not
+repeat a completed review solely to report newly available evidence. Missing,
+stale, unavailable, or invalid required evidence is not a pass; identify the exact
+gap. The overall handoff remains blocked until required proof is valid and passing.
 
-Distinguish a broken fixture, probe, isolation setup, or environment from a product
-defect. Invalid harness results invalidate verification; they do not prove a product
-failure. Preserve/reference the bad-run evidence, identify what made it invalid,
-and report the missing valid check. Do not repair the harness or edit production
-code. A separate proven product defect remains reportable.
+A behavioural finding needs a `file:line` citation, reachable trigger/path, and
+concrete consumer impact. Identify the root cause and support failing behaviour
+with source evidence or a reproducible observation tied to this snapshot. Distinguish
+a broken fixture, probe, isolation setup, or environment from a product defect.
+Preserve invalid-run evidence, identify its cause, and report missing valid proof.
+Do not repair the harness or edit production code.
 
-Check required behavioural proof and verification against the latest snapshot.
-Missing, stale, unavailable, or invalid required evidence is not a `PASS`; report
-the precise gap rather than infer success from absent output.
+Review the changed paths and relevant surrounding behavior; important newly
+discovered defects remain eligible even on unchanged lines. Do not require a
+whole-repository audit on every round.
 
 ## Severity
 
@@ -148,64 +149,53 @@ defects stay nonblocking.
 ## Output
 
 ```markdown
-## Verdict
-<PASS | CHANGES REQUESTED | BLOCKED>
+## Review
+<COMPLETE | INCOMPLETE>
 
 ## Findings
 <ID> path/to/file.ts:42: 🔴 [new|recurring|reopened; origin: newly introduced|newly exposed|previously missed] <root cause; reachable trigger → failing behaviour and consumer impact; evidence; concrete repair.>
-<ID> path/to/file.ts:118: 🟡 <problem; concrete improvement.>
-<ID> other/file.ts:7: 🟣 <unrelated pre-existing defect; note only.>
 
 ## Pending dispositions
 <pending ID>: <resolved|recurring|reopened|not substantiated> — <current-snapshot evidence; reopening cause where applicable.>
 
 ## Verification
-<snapshot; required proof/checks and valid results, or exact missing/invalid evidence and harness cause.>
+<PASS | PENDING | FAIL | NOT REQUIRED> — <snapshot; relevant completed proof or exact missing/invalid evidence. Pending final checks do not make completed code inspection incomplete.>
 
 ## Totals
 🔴 <n>  🟡 <n>  🟣 <n>
 ```
 
-Verdict is `CHANGES REQUESTED` when any proven 🔴 remains. With no proven 🔴,
-use `BLOCKED` if required evidence is missing, unavailable, stale or invalid; use
-`PASS` only when no blockers remain, every pending finding has an evidenced
-disposition, and required behavioural proof and verification are valid and passing
-on the latest snapshot. Repair-cap exhaustion never supplies a review verdict.
+Report `COMPLETE` when code inspection is complete, even if required checks remain
+pending; the orchestrator tracks handoff readiness separately. Report `INCOMPLETE`
+only when code review itself cannot be completed. Important findings require repair;
+missing required proof blocks handoff but does not trigger an evidence-only repeat
+review. A complete review requires evidenced dispositions for all pending IDs.
 
-Keep findings concise, ordered by file and line; use enough lines to preserve root
-cause, reachability, impact and evidence. Omit empty Findings/Pending dispositions
-sections, but always include Verdict, Verification and Totals. No change summary or
-praise; a side-effect disclosure still precedes everything else.
+Keep findings concise, ordered by file and line; preserve root cause, reachability,
+impact, and evidence. Omit empty sections. No change summary or praise; disclose
+side effects first.
 
 Reuse supplied stable IDs (for example `t1-F1`, `final-F1`). A new finding may use
 a local ID for the orchestrator to assign; do not renumber existing findings.
-The same root cause/failing behaviour keeps its ID even when lines move or wording
-changes. Report a disposition for every pending ID without adopting its prior verdict.
+The same root cause/failing behaviour keeps its ID when lines or wording change.
 
 ## Re-review
 
-When you receive a second or later round on the same change:
-
-- **Report 🔴 only.** Nits and unrelated pre-existing notes belong to initial review.
-- Independently perform both spec and quality stages on the current artifact.
-- Check every pending finding for actual resolution, not merely moved code, and
-  report recurring/resolved status with evidence under its stable ID.
-- Reopen a previously fixed or rejected finding only for changed code/reachability
-  or genuinely new evidence; explain the reopening cause and retain its ID.
-- Report genuine newly discovered blockers even on unchanged lines. Give evidence
-  and origin: newly introduced, newly exposed, or previously missed. A missed
-  earlier defect is not suppressed or relabelled as newly introduced.
-- Rewording a finding or adding an opinion is not progress. Report only evidenced
-  closure, meaningful reduction of an existing blocker, or new reproducible evidence
-  materially narrowing its diagnosis; the orchestrator applies the repair policy.
+The same independent reviewer handles repair closure. On repair reviews, report
+Important findings only; nits and unrelated pre-existing notes belong to the
+initial review. Independently inspect changed paths and relevant behavior, checking
+every pending finding for actual resolution, not merely moved code. Reopen a fixed
+or rejected finding only for changed code/reachability or genuinely new evidence;
+explain the cause and retain its ID. Genuine newly discovered blockers remain
+eligible on unchanged lines; state origin. Report evidenced closure, meaningful
+reduction, or new reproducible evidence materially narrowing diagnosis.
 
 ---
 
 # Adjudicator variant
 
-When called to adjudicate a disputed finding, you receive a **finding** and a
-**rebuttal** as two peer artifacts. Neither is the incumbent and neither has
-authority. Read the code yourself and rule.
+When adjudicating a disputed finding, receive a finding and rebuttal as unattributed
+peer artifacts. Neither is authoritative; read the code and rule.
 
 Output:
 
@@ -217,5 +207,5 @@ Output:
 <Cite file:line. Two to five sentences.>
 
 ## Action
-<What should happen to the code, concretely. "No change" is a valid action.>
+<Concrete code action; "No change" is valid.>
 ```

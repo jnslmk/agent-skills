@@ -1,472 +1,205 @@
 ---
 name: implement-review
 description: >-
-  Use when given one task or a list of tasks to build - dispatches a fresh subagent to
-  implement each task and a separate read-only subagent to review it, loops on findings
-  with a capped fix ladder, and for multiple tasks picks the cheapest safe execution
-  mode (sequential, parallel in-place, or isolated worktrees) after building a
-  dependency DAG. Triggers on "implement and review", "build these tasks", "work
-  through this plan", "implement with review", "orchestrate these tasks".
+  Use when implementing and independently reviewing a task or task list. Default to
+  main-agent implementation, one complete-change review, focused repair checks,
+  and final regression verification; orchestrate multiple owners only when needed.
 ---
 
 # Implement + Review
 
-Given work to do, you orchestrate. You do not implement, and you do not review.
-Implementation happens in a fresh subagent. Review happens in a different fresh
-subagent that cannot write. You schedule, dispatch, adjudicate, and integrate.
+**Default: implement in the main agent, then get one independent review.** Keep the
+implementation context through repairs. The reviewer stays read-only and independent
+of the implementation, not fresh on every turn.
 
-**Core principle:** fresh subagent per task + review from an agent that never saw the
-implementer's reasoning + a capped fix ladder that never silently drops a finding.
+**Loop:** scope → implement → focused proof → independent review → repair and focused
+closure → final relevant regression checks → handoff.
 
-## Model policy
+## 1. Scope and choose ownership
 
-All implementation, review, repair, adjudication, and final-review dispatches use
-only `openai-codex/gpt-6-luna` or `openai-codex/gpt-6.1-sol`.
+Read the affected flow and callers, the requested acceptance criteria, and existing
+verification commands. Follow repository session/baseline rules before editing;
+protect unrelated user drafts and select relevant drafts explicitly. Record the
+starting revision, owner, scope, permitted runtime side effects, and required proof.
+Use compact session state for one owner; a task table or DAG earns its place only
+when scheduling multiple independent owners.
 
-Choose implementation by task difficulty, not by repair-round number:
+The main agent owns implementation and integration. Delegate substantial independent
+slices when parallel work saves a real dependency path; define disjoint write-sets
+and fixed contracts first. The main agent may implement its own slice while helpers
+work. Small edits, cleanup, and already-open slices stay inline.
 
-| Work | Agent profile | Model / effort |
+**Risk selects expertise and checks, not ceremony.** Authentication, concurrency,
+background synchronization, money, migrations, and public contracts require suitable
+expertise and targeted boundary/race/error checks. They do not automatically require
+full orchestration. Delegate a sensitive slice if the main agent lacks the required
+expertise; retain one integration owner and one complete-change review.
+
+Use full orchestration only for:
+- Substantial independently owned cross-system contracts needing dedicated coordination.
+- Competing implementations or isolation that genuinely requires separate worktrees.
+- An explicit user request for full orchestration.
+
+For that branch, read [scheduling.md](references/scheduling.md). Read
+[integration.md](references/integration.md) only when worktrees are needed. Full mode
+still permits main-agent implementation; it does not imply per-slice reviews plus a
+second mandatory final review. Repository policy can require stronger gates.
+
+## 2. Implement
+
+Trace the real path end to end, reuse existing patterns, and implement the requested
+behavior without speculative scope. Update affected callers, tests, and existing
+documentation. Keep useful behavior regressions, not source-text or mock-echo tests.
+
+For a delegated slice, use [implementer-brief.md](references/implementer-brief.md).
+Provide acceptance criteria, exact write-set, contracts, working directory, runtime
+permissions, and proposed check commands. Helpers edit and hand off; the integration
+owner queues shared builds, tests, and browser work after the affected source settles.
+Helpers do not mutate git. Commit, merge, or remove worktrees only when requested or
+otherwise explicitly authorized; this skill does not implicitly authorize commits.
+
+### Dispatched-agent model policy
+
+Use only `openai-codex/gpt-6-luna` or `openai-codex/gpt-6.1-sol` for implementation,
+review, repair, and adjudication dispatches. This allowlist governs dispatched agents;
+it is not a prohibition on the main agent implementing at its running model.
+
+| Dispatched work | Profile | Model / effort |
 |---|---|---|
-| Clear, bounded ordinary implementation and its first repairs | `ir-implementer` | Luna / high |
-| Ambiguous, cross-system or time-sensitive implementation | `ir-implementer-sol` | Sol / medium |
-| Authentication, authorization, concurrency, money, irreversible migrations, compatibility-critical APIs or difficult debugging | `ir-implementer-hard` | Sol / high |
-| Repair after a material finding survives an unsuccessful approach without verified progress | Fresh `ir-implementer-hard` | Sol / high |
-| Review, re-review, adjudication and final integrated review | Fresh `ir-reviewer` | Sol / high |
-
-Keep review on Sol even when Sol implemented the candidate. After a failed repair
-without verified progress, replace a Luna implementer with a fresh Sol implementer
-before the next permitted repair; do not spend the ordinary budget repeating the
-same approach on Luna. Apply the existing stagnation gate before dispatching:
-model escalation never overrides a stop or resets product/harness counters.
-Once a task selects or escalates to Sol, keep its implementation on Sol.
-
-Record the selected profile, model, effort, routing reason and any escalation in
-the ledger before dispatch; preserve that selection across resumes. These are
-operating defaults, not a proven optimal Luna/Sol pairing. Increase Sol effort to
-`xhigh` only for a specific hard analysis with evidence justifying the cost;
-do not automatically increase effort with round count or default to `max`.
-
-Ordinary Luna implementation may fall back to Sol on provider failure. Sol-required
-implementation and all reviews/adjudications have no Luna fallback; unavailable
-Sol blocks that dispatch. Provider failures never expand this allowlist.
-Generic agents or effort overrides must be explicitly pinned to the selected
-model and effort. If the harness cannot enforce that selection, use the matching
-configured profile; if none is available, mark the dispatch blocked.
-
-## Why the separation is strict
-
-A reviewer that shares the implementer's context does not review — it ratifies. A
-reviewer that can edit does not review — it becomes a second implementer, and the
-quality signal disappears. Both boundaries are enforced mechanically where the harness
-allows it (`ir-reviewer` has no write tools) and by this skill everywhere else.
-
----
-
-## Phase 0 — Normalise the input
-
-Detect which of three shapes you were given:
-
-| Input | Detection | Action |
-|---|---|---|
-| A path to a markdown file | Argument resolves to an existing `.md` file | Parse task headings. Honour `[P]`, `[depends: N]`, and `writes:` annotations if present |
-| An inline list | Prompt contains a bulleted or numbered list of 2+ items | One task per item |
-| A single free-form task | Anything else | One-task run. Skip Phases 1 and 1b entirely; go to mode A |
-
-Normalise to a task table. Keep it in the ledger, not just in context:
-
-```
-| id | description | write-set | deps | status | rounds |
-|----|-------------|-----------|------|--------|--------|
-| t1 | ...         | src/a/**  | —    | todo   | 0      |
-```
-
-Before dispatching, record the starting revision and any pre-existing local changes
-in the ledger. Preserve the original request/spec alongside the task table; these
-are the baseline for the final integrated review, not just the individual tasks.
-
-Record checkable acceptance criteria, required behavioural verification, and its
-permitted side effects before implementation. These are the review's finish line;
-changing them requires an explicit user decision, not another fix round.
-
-**Write-set** is your prediction of which paths the task will touch, as globs. It
-drives every scheduling decision below, and it gets verified before dispatch — you are
-not trusted on it, and neither is the implementer.
-
-To predict a write-set, read enough of the codebase to be specific. `src/**` is not a
-write-set; it is a refusal to answer. If you genuinely cannot narrow it, that task is
-not parallelisable and belongs in mode B.
-
----
-
-## Phase 1 — Build the schedule (multi-task only)
-
-Full rules in `references/scheduling.md`. The essentials:
-
-**1. Edges are data dependencies, not vibes.** Add `A → B` only when B consumes an
-artifact A produces: a symbol, a schema, a migration, a config key, a file. "B feels
-like it should come after A" is not an edge. This is the single most common failure —
-AI-built task graphs default to a serial chain and end up with zero parallelism.
-
-**2. Foundational work is wave 0 alone.** Shared types, schema changes, migrations,
-scaffolding, dependency additions. Never in the same wave as anything that consumes
-them.
-
-**3. Two tasks share a wave only if their write-sets are disjoint.**
-
-**4. Sanity-check the graph before you trust it.** Compute the critical path. If it
-equals the total work, every task is chained and the graph is wrong — go back and
-challenge each edge for an actual data dependency.
-
-**5. Verify disjointness, do not assume it.** Before dispatching a wave, expand every
-write-set glob to concrete paths with `git ls-files` and intersect them. Overlap means
-those tasks do not share a wave. This set computation is the only pre-flight available
-at dispatch time — no branch exists yet, so there is nothing for git to merge.
-
-Later, in mode D, `git merge-tree` gives you exact conflict detection **before
-integration** without touching any working tree. Both are detailed in
-`references/scheduling.md`.
-
----
-
-## Phase 1b — Choose the execution mode
-
-Pick the **cheapest mode that is safe**. Worktrees buy isolation and cost you missing
-`.env` files, per-worktree dependency installs, port and database collisions, and
-disk. Do not pay for isolation you do not need.
-
-Walk the modes in order and take the first that fits:
-
-### Mode A — Single, in-place
-**When:** exactly one task.
-**How:** current branch, no scheduling, no worktree. Implement → review → fix → commit.
-
-### Mode B — Sequential, in-place
-**When:** several tasks that overlap in write-set, are few, are small, or share build,
-test, or database state.
-**How:** current branch, one task at a time, each with its own full implement → review
-→ fix → commit cycle. No worktrees, no integration phase, no conflicts by construction.
-
-**This is the default for small task counts.** It is the lowest-variance path. Reach
-past it only when concurrency buys something real.
-
-### Mode C — Parallel, in-place
-**When:** several tasks whose expanded write-sets provably do not intersect, **and**
-none of them run migrations, start servers, bind ports, or mutate shared build caches.
-**How:** current branch, concurrent implementer subagents editing disjoint paths in one
-shared working tree.
-
-Because the working tree is shared, these rules are non-negotiable:
-
-- **You own git. Implementers do not.** Their brief forbids `git add`, `commit`,
-  `checkout`, `stash`, `rebase`, and `merge`. They edit files and report.
-- **Commits are serialised by you**, one per task after its review passes, using
-  explicit pathspecs — `git commit -- <write-set>`, never `git add -A`. A blanket add
-  in a shared tree captures another task's half-finished work.
-- **Verification is serialised** if the test suite or build writes shared artifacts.
-  Two concurrent `npm test` runs against one `.next/` or `target/` will produce
-  garbage results and you will chase phantom failures.
-- **A write outside a task's declared write-set aborts mode C for that wave.** Re-run
-  the wave as mode B. Do not try to salvage it.
-
-### Mode D — Worktrees
-**When:** isolation is genuinely required — tasks whose writes overlap but must still
-run concurrently, competing implementations of the same task, or tasks that each need
-their own server, database, or build directory.
-**How:** branch per task in `.worktrees/<branch>`, then Phase 4 integration. Setup and
-failure modes in `references/integration.md`.
-
-### Composition and bookkeeping
-
-Waves always run sequentially. Each wave picks its own mode independently — a wave of
-one is mode A regardless of what the other waves do.
-
-**Before dispatching, write the chosen mode and a one-line reason into the ledger.**
-A compacted or resumed run must not silently change modes mid-flight.
-
----
-
-## Phase 2 — Per task: implement, then review
-
-### Dispatch the implementer
-
-Fresh subagent, no inherited session history. Select the implementer profile from
-**Model policy**; use a generic subagent only when its model and effort can be
-explicitly pinned. Supply the current `references/implementer-brief.md` in either
-case: a built-in profile may carry an older embedded brief. Current skill
-instructions govern the dispatch.
-
-Give it exactly this and nothing more:
-
-- The task description, verbatim from the table, and its acceptance criteria
-- Its declared write-set, stated as a hard boundary
-- The working directory (worktree path in mode D, repo root otherwise)
-- Interfaces it must conform to — signatures, schemas, types it consumes
-- Global constraints: the project's conventions, its test command, its lint command
-- Required verification and permitted side effects; the orchestrator runs checks
-  after source is ready, serialising shared runtime/build state
-- A path to write its report to
-
-Do **not** give it: your reasoning, the other tasks, prior review findings from a
-different task, or the session history. Context it does not need is context that
-lets it drift outside its slice.
-
-### Provider failure fallback
-
-Provider availability is separate from implementation quality. A provider rate
-limit, quota exhaustion, outage, or transport failure is not a task failure and
-does not consume a fix-ladder round.
-
-When an implementer cannot start or complete because of a provider failure:
-
-1. Classify the error from the provider response. Do not infer a rate limit from
-   a generic agent timeout.
-2. Honour `Retry-After` only when it is within the orchestrator's maximum wait
-   (five minutes by default). A longer delay immediately selects the next
-   fallback.
-3. Dispatch one fresh implementer through the next available model/provider,
-   using the original task description, write-set, interfaces, constraints, and
-   report path. Do not pass the failed agent's reasoning.
-4. Keep the task's implementation round unchanged and record the provider,
-   classification, retry delay, and selected fallback in the ledger.
-5. Never run two implementers for the same task concurrently. Before fallback
-   dispatch, inspect the declared write-set for partial edits and make the new
-   implementer continue safely from the current tree.
-
-Use the eligible fallback in **Model policy**, with the same implementer brief and
-hard write-set boundary for each fresh dispatch. Respect the task's recorded Sol
-selection: provider failure cannot downgrade it to Luna. If no eligible model is
-available, mark the task `blocked: provider-unavailable` and surface the provider
-evidence to the user. Do not silently retry for hours.
-
-This execution fallback ends when an implementer produces an artifact. Review
-then starts normally with a fresh read-only reviewer; provider fallback is not
-part of the reviewer finding fix ladder below.
-
-### Verify the candidate
-
-Once source is ready, run the required behavioural checks against the exact
-candidate and record the command/scenario, snapshot and result. A failed fixture,
-probe or environment makes that evidence invalid; it does not establish a product
-bug. Preserve the failed run and use the bounded harness-repair branch in
-`references/adjudication.md` before trusting another run. Smoke a repaired harness
-on a minimal scenario before repeating full verification.
-
-Invalid or missing required evidence blocks completion. A passing review cannot
-waive it, and changing an assertion or production code is not a harness-only repair.
-
-### Dispatch the reviewer
-
-Fresh subagent, `ir-reviewer` where available. Supply the current
-`references/reviewer-brief.md` even with the built-in profile; do not assume its
-embedded instructions have been refreshed. Two stages, in order:
-
-1. **Spec compliance** — does it do what the task said, all of it, and nothing else?
-2. **Code quality** — correctness, edge cases, error paths, resource handling.
-
-Give the reviewer the **diff as a file**, requirements and acceptance criteria.
-Fill `{{REVIEW_CONTEXT}}` with the initial/re-review stage, exact snapshot, required
-checks and their evidence. Include implementer observations only for results the
-diff cannot show; exclude its reasoning and proposed checks presented as results.
-
-On re-review, include neutral pending finding IDs, root causes, failing scenarios
-and evidence to check resolution. Treat them as claims to verify, not verdicts.
-Genuine newly discovered blockers remain eligible even on unchanged lines.
-
-**Never give the reviewer the implementer's reasoning or your session history.** This
-is not stylistic caution. LLM judges are measurably swayed by an assertive framing
-over a correct one — a bare confident claim outperforms a well-reasoned one at
-changing a judge's verdict. A reviewer that sees the argument is reviewing the
-argument. Give it the artifact.
-
-### Your own premises are the most dangerous input
-
-Everything you assert in a brief arrives as established fact. An agent that then
-"confirms" it has confirmed nothing — you told it the answer and it found a way to
-agree. **Two agents you briefed identically agreeing is not corroboration. It is one
-claim, counted twice.**
-
-The failure shape is specific: you state a diagnosis, dispatch on it, the work comes
-back consistent with it, and the diagnosis is wrong. Nothing in the loop can catch
-that, because every participant inherited the error from you.
-
-So:
-
-- Label diagnosis as a **claim to verify**, not as background — and mean it.
-- When a finding depends on your premise, ask for the evidence, not the conclusion.
-- **Treat an agent that challenges your premise as the loop working**, not as one that
-  misread the brief. Re-derive it yourself before overruling.
-- If a premise turns out wrong, fix it in the ledger *and* re-check everything already
-  built on it. Downstream work inherited the error too.
-
-### Verification is not free
-
-"Read-only" is an instruction, not a property. Withholding Write/Edit leaves Bash, and
-Bash reaches production hosts, container daemons, git state and secrets. When you ask
-for empirical verification, say what it may touch and what it must not, and require
-disclosure of any side effect.
-
-Two real incidents in one session: a reviewer ran `docker run -v <name>:/path` — which
-auto-creates the named volume — leaving a stray one on a production host that would
-have silently broken the next deploy; and a reviewer's `PATH`-restriction test failed
-to isolate what it believed it did, so the command ran against real state and printed
-a live credential into the transcript, forcing a rotation.
-
-Both surfaced only because the agents disclosed them. Make that disclosure an explicit
-expectation, and treat an honest self-report as the system working — the alternative
-is not fewer side effects, only unreported ones.
-
-### Severity
-
-| Marker | Tier | Meaning |
-|---|---|---|
-| 🔴 | Important | A bug that should be fixed before this lands |
-| 🟡 | Nit | Minor, worth fixing, not blocking |
-| 🟣 | Pre-existing | An unrelated defect not introduced or exposed by this change |
-
-**Verification bar:** a behavioural finding needs a `file:line` citation, a reachable
-trigger/code path and concrete consumer impact. Assign a stable ID and root cause
-using `references/adjudication.md`; a renamed or relocated finding stays the same
-finding. Opinions and invalid harness results are not evidence of a product defect.
-
-Pre-existing notes are recorded and parked, not repaired in this run. An existing
-root cause now exposed by this change, or preventing an explicit acceptance
-criterion, remains an in-scope Important finding.
-
----
-
-## Phase 3 — The fix ladder
-
-Read `references/adjudication.md` before the first repair. It is the authoritative
-protocol for counting cycles, findings, convergence, extensions and harness repairs.
-Allow five normal fix/re-review cycles; cycles 6–8 require a recorded evidence gate
-before each dispatch. Eight is the hard automatic cap, not a target or a verdict.
-
-After an unsuccessful approach to a finding, use a fresh implementer; stop earlier
-when the convergence gate fails. Extensions require verified progress or a genuinely
-new material defect and a specific next repair/check. Rephrased findings, new task
-names and resumed sessions do not refresh the budget.
-
-Only Important findings enter repair re-reviews. Every finding receives a recorded
-disposition. Disputes go to a fresh adjudicator with the finding and rebuttal as
-unattributed peer artifacts, following the bounded dispute protocol.
-
----
-
-## Phase 4 — Integrate (mode D only)
-
-Modes A, B, and C commit to the current branch as they go and skip this phase.
-
-Full procedure and failure modes in `references/integration.md`. The shape:
-
-```bash
-git merge --ff-only task/t1
-git rebase <base> task/t2      # t2 now sees t1
-git merge --ff-only task/t2
-git rebase <base> task/t3      # t3 sees t1 and t2
-git merge --ff-only task/t3
-```
-
-Rebase then merge, one branch at a time, so each branch integrates against what
-actually landed before it. **Do not cherry-pick** — it duplicates commits and discards
-branch ancestry. Cherry-pick is correct in exactly one situation: you raced several
-implementations of the *same* task and are keeping the winner.
-
-**On a rebase conflict: stop and hand it to the user.** Do not auto-abort — a paused
-rebase may be one the user is mid-way through resolving.
-
-Remove each worktree immediately after its branch merges.
-
----
-
-## Phase 5 — Final integrated review (multi-task runs, all modes)
-
-After every task has passed its own review and all changes are in the target working
-tree (after Phase 4 in mode D), run this gate before declaring the run complete.
-Apply it to the whole run, even when each wave used mode A. A single-task run skips
-this phase because its independent task review already covers the complete change.
-
-### Review the combined artifact
-
-Dispatch a **fresh `ir-reviewer`**, separate from every task's implementer and
-reviewer, using `references/reviewer-brief.md`. Its task description is the original
-request/spec plus the complete task table and shared interface contracts. Give it:
-
-- A run-only aggregate diff from the recorded baseline, including integration edits
-  and subsequent repairs; exclude unrelated and pre-existing local changes.
-- The target working directory and the exact reviewed revision/tree snapshot.
-- Verification evidence only for observations the diff cannot show, plus explicit
-  permitted verification scope and side-effect disclosure requirements.
-
-Keep implementer reasoning, prior reviewers' verdicts, and session history out of
-the dispatch. The reviewer inspects the actual integrated code with the same
-read-only boundaries, severity rules, and `file:line` evidence bar as task review.
-
-The two review stages now cover **the complete spec and cross-task behaviour**:
-trace producer/consumer contracts, shared state and configuration, migration/order
-assumptions, error paths, and affected callers end to end. Check that the combined
-implementation satisfies requirements that no individual task owned. Task-level
-PASS verdicts do not prove integration. A defect exposed by composition is eligible
-even when the implicated lines already passed task review.
-
-### Resolve and re-review
-
-Record findings under `final` in the same ledger. For blocking findings, create one
-integration-repair task with an explicit write-set spanning the necessary owners
-and dispatch a fresh implementer. Apply Phase 3's complete protocol with one separate
-final-stage product counter and harness counter. New findings or repair-task names
-do not reset either counter; the same extension and stagnation gates apply.
-
-After each repair, serialize integration and behavioural verification, regenerate
-the aggregate diff, and dispatch a fresh final reviewer. Provide neutral pending
-findings to check resolution, but no rebuttals or earlier verdicts. Re-review the
-complete combined artifact, not just the repair diff; genuine late blockers count.
-
-**Completion gate:** the latest integrated snapshot has a final `PASS`, every
-finding has a disposition, and combined behavioural verification has passed with
-evidence recorded. Any later code change invalidates that PASS and requires
-re-review. Exhausted blocking findings or failed verification leave the run blocked,
-even if its task commits have already landed locally; report that state to the user.
-
----
-
-## The ledger
-
-`.implement-review/<run-id>/ledger.md`, gitignored. It holds acceptance criteria,
-the task table, schedule/mode, product and harness counters, convergence/extension
-decisions, and stable findings with their evidence, attempts and dispositions.
-
-This is what lets a run survive context compaction, and it is what makes "no silent
-discards" an auditable claim rather than an intention. Update it after every state
-change, not at the end.
-
-Derive `<run-id>` from `git rev-parse --short HEAD` plus a slug of the first task —
-**never a timestamp**, so that a resumed run addresses the same directory. Format in
-`references/adjudication.md`.
-
-Add `.implement-review/` to the repo's `.gitignore` if it is not already there.
-
----
-
-## Stop and ask the user when
-
-- A rebase or merge conflicts.
-- A convergence gate fails, an extension is not justified, or the hard cap is
-  reached with open Important findings.
-- Required verification remains invalid or unavailable, including an exhausted
-  harness-repair budget.
-- A task's real write-set escapes its declared one in a way that invalidates the
-  schedule.
-- The work as described cannot be done without a decision you were not given —
-  a schema change, a dependency addition, an API break.
-
-Everything else runs unattended.
-
-## Do not
-
-- Implement or review anything yourself. You orchestrate.
-- Let the reviewer edit files.
-- Give the reviewer the implementer's reasoning.
-- Use `git add -A` in mode C.
-- Cherry-pick to integrate parallel slices.
-- Drop a finding without recording its disposition.
-- Create worktrees for tasks that do not need isolation.
+| Clear, bounded implementation and ordinary repairs | `ir-implementer` | Luna / high |
+| Ambiguous or cross-system implementation | `ir-implementer-sol` | Sol / medium |
+| Sensitive boundaries, concurrency, irreversible changes, hard debugging | `ir-implementer-hard` | Sol / high |
+| Independent review and retained repair closure | `ir-reviewer` | Sol / high |
+| Stagnant repair or disputed finding | Fresh hard implementer or independent adjudicator | Sol / high |
+
+Keep a retained reviewer on the same review model. Preserve a dispatched slice's Sol
+selection across repairs. Ordinary Luna implementation can fall back to Sol on a
+verified provider failure; Sol-required work has no Luna fallback. Honor a usable
+Retry-After up to five minutes, then use an eligible available provider or report the
+blocker. Provider failures do not consume product repair rounds or justify concurrent
+implementers on the same files. Pin model/effort or use the matching configured
+profile; unavailable required expertise blocks that dispatch. Raise effort only for
+a specific evidenced need, not automatically on each round.
+
+## 3. Focused proof before review
+
+Run cheap syntax/lint/format/type checks at the affected scope, then the smallest
+consumer-visible scenario covering the change. Exercise the actual changed surface;
+tests alone do not replace a runtime smoke. Documentation-only changes need link,
+consistency, and representative decision checks, not unrelated application suites.
+
+For a bug, capture the reported failing path before repair when practical, then prove
+it fixed. For a feature, cover its uncertain boundaries and the full user path. A
+broken command, fixture, selector, or browser launcher is a harness failure, not a
+product defect. Smoke a corrected harness minimally before a broad rerun.
+
+### One verification queue
+
+One owner queues commands sharing a lock, build cache, database, port, or browser
+resource. Launch the next command after the current owner releases the resource;
+do not submit parallel jobs merely to wait on the same `flock`. Independent cheap
+read-only checks may run concurrently only when their resources are independent.
+
+Reserve full suites, repeated builds, and broad visual passes until implementation
+and review-driven repairs settle. During repairs, run the relevant regression and
+cheap checks. After review closure, run the required broader regression set once on
+the stable candidate. A late defect reopens affected proof and review; a passing
+full suite from an earlier implementation is not proof of the repaired path.
+
+### Orca browser is the default
+
+For manual web verification use **Orca's embedded, worktree-scoped browser through
+the Orca CLI**. Read `skill://orca-cli` first, resolve the session's executable once,
+and load its version-matched guide and `references/browser.md`. Follow that resolver;
+do not guess an executable or blindly invoke bare `orca` on Linux.
+
+- Reuse the repository's supported disposable fixture or preview. Create an owned
+  browser tab with the resolved CLI's `tab create --url ... --json`. Copy its
+  `browserPageId` and pass `--page` on every page command; never retarget a user's tab.
+- Use `snapshot`, typed interaction commands, state-based `wait`, and action effects.
+  Read status/error text explicitly: interactive-only snapshots omit page text.
+  Use `screenshot` for visual evidence and open its returned image. Close only the
+  owned page with `tab close --page ... --json`. Follow the version-matched browser
+  reference for flags, refs, viewport emulation, dialogs, and stale-ref recovery.
+- Orca owns the browser. Do not build a bespoke Playwright/Puppeteer/CDP launcher
+  or attach a competing automation client for manual inspection. Do not silently
+  substitute the generic Eval browser/Chrome relay for the requested Orca surface.
+- Existing repository Playwright/browser regression suites remain appropriate for
+  automated regressions; they complement rather than replace Orca surface smoke.
+- If the selected Orca executable or browser is unavailable, report the exact
+  limitation. Do not switch Orca builds or claim unobserved Orca visual proof.
+  Use an existing supported fallback only when user/project policy permits it.
+- Before temporary previews or heavy browser work, record session owner, unique
+  job, isolated process group/unit, finite expiry, purpose, and cleanup command.
+  Follow workspace locking rules; absent a stricter rule, use a 15-minute expiry
+  enforced independently of the agent. Close owned pages and stop owned preview
+  descendants before releasing resources. Leave Orca's user-owned app/browser
+  process and other user sessions running; do not give the persistent app an expiry.
+
+### Relevant-input evidence
+
+Use canonical repository runners and record each proof's actual production, test,
+configuration, toolchain, and generated-asset inputs. Relevant input changes reopen
+that proof. Formatting a test does not semantically require rebuilding assets;
+documentation edits do not automatically invalidate unrelated runtime behavior.
+Reuse evidence for unchanged scopes only when input independence is established and
+the runner supports it. Respect the runner's validity flags: do not relabel a drifted
+or invalid run as valid or weaken the runner as a side effect. If its coarse snapshot
+requires a rerun, obey it and avoid starting expensive checks during active edits.
+
+## 4. One independent complete-change review
+
+After helpers are integrated and focused proof is available, dispatch one independent
+read-only reviewer using [reviewer-brief.md](references/reviewer-brief.md). Supply the
+original requirements, complete run-only diff, affected interfaces/callers, exact
+candidate identity, exercised evidence, and remaining final check plan. Exclude the
+implementer's reasoning and diagnoses presented as fact. The reviewer checks spec
+compliance, then correctness, boundaries, errors, resources, and test relevance.
+
+A blocker needs a file:line citation, reachable trigger, and concrete consumer impact.
+Treat a proposed diagnosis as a claim to verify. Reviewers do not edit or run real
+systems without an explicitly permitted verification scope; read-only tools do not
+make shell/network effects safe. Never emit credentials or secret-bearing output.
+
+One complete-change review of the actual combined candidate satisfies integration,
+even with helpers or a task list. Add a specialist slice review only for a concrete
+independent high-risk boundary or explicit requirement. A fresh final audit is needed
+only when combined integration was not covered, scope materially broadened, review
+independence was compromised, or the user explicitly requests one. Do not routinely
+stack per-task, per-slice, and final audits on the same artifact.
+
+## 5. Repair with retained context
+
+Batch supported Important findings. Retain the implementation owner while making
+verified progress, and retain the same independent reviewer for focused closure.
+Send the repair diff, relevant original context, stable finding IDs, and focused
+proof. Review changed paths and affected producer/consumer behavior; expand to the
+whole artifact only for cross-cutting changes or evidenced wider impact. New genuine
+blockers remain eligible, including previously missed defects on unchanged lines.
+
+Use a fresh reviewer only for unavailability, compromised independence, materially
+expanded scope/ownership, stagnation, or an explicit fresh-audit request. A retained
+reviewer keeps its own findings; a fresh reviewer receives neutral pending claims,
+not inherited verdicts, rebuttals, or author reasoning. Disputes use a fresh independent
+adjudicator, not repeated votes from the same reviewer.
+
+Before the first repair, read [adjudication.md](references/adjudication.md), the sole
+authority for stable IDs, dispositions, repair/harness counters, invocation correction,
+stagnation, extensions, and disputes. Preserve its five ordinary/eight maximum product
+cycles and two harness-source attempts; reviewer replacement, renamed tasks, and
+resumption do not reset budgets. Do not invent a stage per reviewer.
+
+## 6. Final checks and handoff
+
+Keep code review and verification as separate gates. A reviewer can finish code
+inspection while broad checks are pending; the main agent holds completion until
+all required relevant evidence passes. Collect final evidence once and reconcile it
+without repeatedly waking reviewers just to change an evidence-only BLOCKED verdict.
+Actual code changes or a newly exposed product defect reopen review and proof.
+
+Finish when the complete requested behavior works, the independent review covers
+the final semantic changes, every finding has a disposition, required checks and
+actual-surface proof pass on relevant current inputs, and owned temporary resources
+are released. Update documentation, remove throwaway scaffolds, release repository
+session ownership, and commit only if requested. Report concise exercised evidence
+and real remaining blockers, respecting the user's requested response format.
