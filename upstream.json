@@ -60,6 +60,10 @@
       "rev_date": "2026-10-31",
       "source": "github:mattpocock/skills"
     },
+    "feedback-loop-tuning": {
+      "license": "MIT",
+      "source": "own:"
+    },
     "find-skills": {
       "license": "MIT",
       "path": "skills/find-skills",

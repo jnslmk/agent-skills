@@ -21,8 +21,15 @@ repo tracks them. OMP discovers them flat (`<name>/SKILL.md`); do not nest.
 | `vercel-labs/skills` | 1 (`find-skills`) | MIT | |
 | `pbakaus/impeccable` | 1 (`impeccable`) | Apache-2.0 | pristine OpenCode export: `.opencode/skills/impeccable` |
 | `nextlevelbuilder/ui-ux-pro-max-skill` | 1 (`ui-ux-pro-max`) | MIT | base = `.claude/skills/ui-ux-pro-max` |
-| own (`jnslmk/…`) | 14 + `implement-batch`, `implement-review`, `implement-review-auto`, `rtk` | MIT | homelab-*, nas-ops, config-gc, canary-watch, … |
+| own (`jnslmk/…`) | 14 + `feedback-loop-tuning`, `implement-batch`, `implement-review`, `implement-review-auto`, `rtk` | MIT | homelab-*, nas-ops, config-gc, canary-watch, … |
 | `anthropics/skills` | `docx`, `pdf`, `xlsx`, `frontend-design`, `mcp-builder`, `webapp-testing` — **not committed** | proprietary, no redistribution | stay on disk, update via the plugin checkout |
+
+## Feedback-loop tuning
+
+Use [`feedback-loop-tuning`](feedback-loop-tuning/SKILL.md) to measure and reduce
+hook, local-test and CI latency while preserving required coverage and the exact
+release candidate. It covers baseline timings, workload-specific budgets, safe
+parallelization and verification; hosted improvements remain projections until measured.
 
 ## Scheduled upstream updates
 
